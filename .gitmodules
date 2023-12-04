@@ -1,0 +1,6 @@
+[submodule "src/llama.cpp"]
+	path = src/llama.cpp
+	url = https://github.com/ggerganov/llama.cpp.git
+[submodule "src/ios-cmake"]
+	path = src/ios-cmake
+	url = https://github.com/leetal/ios-cmake.git

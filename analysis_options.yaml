@@ -1,0 +1,12 @@
+include: package:flutter_lints/flutter.yaml
+
+# Additional information about this file can be found at
+# https://dart.dev/guides/language/analysis-options
+# Ignore all issues in the generated bindings file (aub_ai_bindings_generated.dart)
+analyzer:
+  plugins:
+    - custom_lint
+  exclude:
+    - "**/aub_ai_bindings_generated.dart"
+    - "src/**/*"
+
