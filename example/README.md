@@ -7,7 +7,7 @@
   <sub>This is the included example app that makes use of AubAI, a Flutter/Dart package that allows you to supercharge apps with on-device AI capabilities.<br/>
 
   ![Pub](https://img.shields.io/pub/v/aub_ai.svg)
-  ![GitHub stars](https://img.shields.io/github/stars/BrutalCoding/shady.ai.svg?style=social&label=Star)
+  ![GitHub stars](https://img.shields.io/github/stars/BrutalCoding/aub.ai.svg?style=social&label=Star)
 </div>
 
 # AubAI (Example App)

@@ -7,7 +7,7 @@
   Offline AI is the next frontier in cross-platform app development, and AubAI makes it easy to add it to your app.</sub>
 
   ![Pub](https://img.shields.io/pub/v/aub_ai.svg)
-  ![GitHub stars](https://img.shields.io/github/stars/BrutalCoding/shady.ai.svg?style=social&label=Star)
+  ![GitHub stars](https://img.shields.io/github/stars/BrutalCoding/aub.ai.svg?style=social&label=Star)
 </div>
 
 # Table of Contents

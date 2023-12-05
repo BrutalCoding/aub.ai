@@ -1,6 +1,6 @@
 name: aub_ai
 description: AubAI allows you to supercharge apps with on-device AI capabilities. Offline AI is the next frontier in cross-platform app development, and AubAI makes it easy to add it to your app.
-version: 1.0.1
+version: 1.0.2
 homepage: https://aub.ai
 repository: https://github.com/BrutalCoding/aub.ai
 issue_tracker: https://github.com/BrutalCoding/aub.ai/issues
