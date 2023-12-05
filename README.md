@@ -1,5 +1,5 @@
 <div align="center">
-  <image alt="App icon of AubAI" height=256 src="./example/assets/appicon_avatar.png"/>
+  <image alt="App icon of AubAI" height=256 src="https://github.com/BrutalCoding/aub.ai/blob/main/example/assets/appicon_avatar.png?raw=true"/>
 
   <h1>AubAI</h1>
 
