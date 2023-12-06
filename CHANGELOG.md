@@ -9,3 +9,9 @@
 ## 1.0.2
 
 * Fix: README.md displaying wrong amount of GitHub stars
+
+## 1.0.3
+
+* Feat: Update package metadata, llamacpp, Dart bindings, and README
+* Feat: Improve UI and file selection process (example app)
+* Feat: Update metadata of Windows example app
