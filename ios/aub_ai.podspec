@@ -5,10 +5,9 @@
 Pod::Spec.new do |s|
   s.name             = 'aub_ai'
   s.version          = '1.0.0'
-  s.summary          = 'AubAI allows you to supercharge apps with on-device AI capabilities.'
+  s.summary          = 'AubAI brings you on-device gen-AI capabilities, including offline text generation and more, directly within your app.'
   s.description      = <<-DESC
-  AubAI allows you to supercharge apps with on-device AI capabilities.
-  Offline AI is the next frontier in cross-platform app development, and AubAI makes it easy to add it to your app.
+  AubAI brings you on-device gen-AI capabilities, including offline text generation and more, directly within your app.
                        DESC
   s.homepage         = 'https://brutalcoding.com'
   s.license          = { :file => '../LICENSE' }

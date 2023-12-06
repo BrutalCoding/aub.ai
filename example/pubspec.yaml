@@ -84,4 +84,5 @@ icons_launcher:
     linux:
       enable: true
     web:
-      enable: false
+      enable: true
+      image_path: 'assets/appicon_rounded.png'

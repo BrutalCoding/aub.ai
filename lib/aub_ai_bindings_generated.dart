@@ -2106,6 +2106,33 @@ typedef Dartllama_pos = int;
 typedef llama_seq_id = ffi.Int32;
 typedef Dartllama_seq_id = int;
 
+abstract class llama_model_kv_override_type {
+  static const int LLAMA_KV_OVERRIDE_INT = 0;
+  static const int LLAMA_KV_OVERRIDE_FLOAT = 1;
+  static const int LLAMA_KV_OVERRIDE_BOOL = 2;
+}
+
+final class llama_model_kv_override extends ffi.Struct {
+  @ffi.Array.multi([128])
+  external ffi.Array<ffi.Char> key;
+
+  @ffi.Int32()
+  external int tag;
+
+  external UnnamedUnion1 unnamed;
+}
+
+final class UnnamedUnion1 extends ffi.Union {
+  @ffi.Int64()
+  external int int_value;
+
+  @ffi.Double()
+  external double float_value;
+
+  @ffi.Bool()
+  external bool bool_value;
+}
+
 final class llama_model_params extends ffi.Struct {
   /// number of layers to store in VRAM
   @ffi.Int32()
@@ -2123,6 +2150,9 @@ final class llama_model_params extends ffi.Struct {
 
   /// context pointer passed to the progress callback
   external ffi.Pointer<ffi.Void> progress_callback_user_data;
+
+  /// override key-value pairs of the model meta data
+  external ffi.Pointer<llama_model_kv_override> kv_overrides;
 
   /// only load the vocabulary, no weights
   @ffi.Bool()

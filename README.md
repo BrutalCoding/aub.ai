@@ -3,37 +3,47 @@
 
   <h1>AubAI</h1>
 
-  <sub>AubAI allows you to supercharge apps with on-device AI capabilities.<br/>
-  Offline AI is the next frontier in cross-platform app development, and AubAI makes it easy to add it to your app.</sub>
+  <sub>AubAI brings you on-device gen-AI capabilities, including offline text generation and more, directly within your app.</sub>
 
   ![Pub](https://img.shields.io/pub/v/aub_ai.svg)
   ![GitHub stars](https://img.shields.io/github/stars/BrutalCoding/aub.ai.svg?style=social&label=Star)
 </div>
 
-# Table of Contents
-
-- [Intro](#intro)
-- [Do You Like This Project?](#do-you-like-this-project)
-- [Werkloos](#werkloos)
-- [Supported Platforms](#supported-platforms)
-- [Setup](#setup)
-- [Technical Details](#technical-details)
-- [Disclaimer](#disclaimer)
-- [Licensing](#licensing)
-  - [Open Source Licensing](#open-source-licensing)
-  - [Commercial Licensing](#commercial-licensing)
-- [Contributing](#contributing)
-- [YouTube](#youtube)
-
 ## Intro
 
-Welcome Flutteristas, AI enthusiasts, and everyone else! Are you ready to supercharge your apps with on-device AI capabilities? If so, you've come to the right place.
+Greetings Flutteristas, AI enthusiasts, and forward-thinking developers! Ready to revolutionize your apps with on-device gen-AI, including advanced text generation capabilities? You've landed in the right place.
 
-**AubAI is a Flutter/Dart package that allows you to run on-device AI models**.
+Meet AubAI: a Flutter/Dart package designed specifically for empowering your apps with on-device gen-AI models. Whether it's generating text, enhancing user interaction, or other AI-driven tasks, AubAI has got you covered.
 
-It works on all major platforms. Don't take my word for it though, see for yourself. I have made YouTube videos that demonstrate AubAI in action. Check them out: [YouTube.com/@BrutalCoding](https://www.youtube.com/@BrutalCoding).
+This package is a game-changer for all major platforms. But don't just take my word for it; see AubAI in action in my YouTube tutorials at [YouTube.com/@BrutalCoding](https://www.youtube.com/@BrutalCoding).
 
-Designed with simplicity in mind, it's easy to use, and it's open source.
+AubAI is not only powerful and versatile but also user-friendly and open-source. It's time to unlock the full potential of your apps with the latest in gen-AI technology.
+
+## Features and Capabilities
+
+### Advanced Gen-AI Integration
+
+- **Text Generation**: Harness the power of cutting-edge language models with AubAI for smooth text generation, elevating the user experience through advanced natural language processing. Effortlessly download and try out any GGUF model from sources such as [HuggingFace](https://huggingface.co/models?library=gguf), bringing top-tier AI functionality into your app with ease.
+
+### Cross-Platform Compatibility
+
+- **Universal Platform Support**: AubAI is meticulously designed for Flutter, ensuring seamless operation across a multitude of platforms. This broad compatibility extends to various operating systems, catering to a diverse range of development needs:
+
+  - macOS (ARM64 & x86_64)
+  - Windows (x86_64)
+  - Linux (x86_64)
+  - Android (ARM64)
+  - iOS (ARM64)
+  - iPadOS (ARM64)
+
+### User-Friendly Design
+
+- **Simplified Integration**: At the heart of AubAI is a commitment to simplicity, making sophisticated AI features accessible to developers across all expertise levels.
+- **Open Source Community**: Embracing the spirit of collaborative development, AubAI is an open-source package. We encourage and welcome community contributions, driving innovation and fostering an environment of continuous advancement.
+
+### Demonstrations and Tutorials
+
+- **Engaging Live Examples**: Discover AubAI's practical applications and watch it in action on my YouTube channel at [YouTube.com/@BrutalCoding](https://www.youtube.com/@BrutalCoding). Providing clear, real-world examples of how AubAI can transform your apps with on-device gen-AI, learn how to integrate AubAI into your projects with ease.
 
 ## Do You Like This Project?
 
@@ -51,28 +61,6 @@ Assuming you have checked out AubAI, and you like it, there are several ways to 
 Consider becoming a sponsor. While the idea of this project is to make AI accessible to everyone, it comes at a cost, in terms of spending a lot of time on this project. My landlord doesn't accept GitHub stars as a form of payment, not yet at least. If you can afford it, please consider becoming a sponsor. It could be as little as $1 one time, $1 per month, or any other amount. Every little bit helps, both mentally and financially.
 
 If you're a wealthy individual that was about to purchase a big luxury yacht, consider one less gold-plated knob on the steering wheel and use that money to add your name to the list of sponsors.
-
-## Werkloos
-
-A Dutch word that perfectly describes my current situation: unemployed. But using that word in English might've made you skip this section, yet here you are. I'm glad you're still reading.
-
-Recently, last September, the fintech startup I was working for had to shut down due to the challenging market conditions. While I'm currently looking for a new job, It's not easy to find a company that combines my passion for AI and Flutter.
-
-I've decided to take a leap of faith and work on this project untill I find a new job, or until I run out of money (Jan-Feb 2024). Whichever comes first. Perhaps I'll find a way to make this project sustainable, while keeping it open source. I'm just going with the flow.
-
-## Supported Platforms
-
-Items are subject to change. This list is not exhaustive, I'll update it as I go.
-
-- [x] macOS (ARM64)
-- [x] macOS (x86_64)
-- [x] Windows (x86_64)
-- [x] Linux (x86_64)
-- [x] Android (ARM64)
-- [x] iOS (ARM64, and simulator x86_64 + ARM64)
-- [ ] Web (WASM)
-
-As I've previously mentioned in the intro, I have made YouTube videos that demonstrate AubAI in action. Check them out: [YouTube.com/@BrutalCoding](https://www.youtube.com/@BrutalCoding).
 
 ## Setup
 
@@ -177,6 +165,14 @@ For your convenience, I have listed some of the videos below:
 - [Running local AI on my iPad Mini. Free & Open Source.](https://www.youtube.com/watch?v=-bRoXvFZVv0)
 - [Using My Offline AI App on a Pixel 7 (Android 13), Powered By My Upcoming Flutter Plugin](https://www.youtube.com/watch?v=SBaSpwXRz94)
 - [Running Offline LLMs such as Mistral 7B on Linux. Open-Source llama.cpp Wrapper for Flutter.](https://www.youtube.com/watch?v=LOTCvGnO7lg)
+
+## Werkloos
+
+A Dutch word that perfectly describes my current situation: unemployed. But using that word in English might've made you skip this section, yet here you are. I'm glad you're still reading.
+
+Recently, last September, the fintech startup I was working for had to shut down due to the challenging market conditions. While I'm currently looking for a new job, It's not easy to find a company that combines my passion for AI and Flutter.
+
+I've decided to take a leap of faith and work on this project untill I find a new job, or until I run out of money (Jan-Feb 2024). Whichever comes first. Perhaps I'll find a way to make this project sustainable, while keeping it open source. I'm just going with the flow.
 
 ## Friends of AubAI
 
