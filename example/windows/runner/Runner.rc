@@ -89,13 +89,13 @@ BEGIN
     BEGIN
         BLOCK "040904e4"
         BEGIN
-            VALUE "CompanyName", "com.example" "\0"
-            VALUE "FileDescription", "aub_ai_example" "\0"
+            VALUE "CompanyName", "Daniel Breedeveld" "\0"
+            VALUE "FileDescription", "aubai" "\0"
             VALUE "FileVersion", VERSION_AS_STRING "\0"
             VALUE "InternalName", "aub_ai" "\0"
-            VALUE "LegalCopyright", "Copyright (C) 2023 com.example. All rights reserved." "\0"
-            VALUE "OriginalFilename", "aub_ai_example.exe" "\0"
-            VALUE "ProductName", "aub_ai_example" "\0"
+            VALUE "LegalCopyright", "Copyright (C) 2023 Daniel Breedeveld. All rights reserved." "\0"
+            VALUE "OriginalFilename", "aubai.exe" "\0"
+            VALUE "ProductName", "aubai" "\0"
             VALUE "ProductVersion", VERSION_AS_STRING "\0"
         END
     END
