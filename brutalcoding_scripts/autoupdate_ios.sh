@@ -46,8 +46,8 @@ cd build || exit
 # We will start compiling our own src/CMakelists.txt file with the iOS toolchain found in 'src/ios-cmake' folder.
 # We should end up with a .dylib file that we can use in our Flutter app for iOS.
 # Please note: This dylib will only work on iOS devices with an arm64 architecture. It is NOT a universal binary.
-cmake .. -DBUILD_SHARED_LIBS=ON -DLLAMA_METAL=OFF -DLLAMA_BUILD_TESTS=OFF -DLLAMA_BUILD_EXAMPLES=OFF -DLLAMA_BUILD_SERVER=OFF -DCMAKE_TOOLCHAIN_FILE=../ios-cmake/ios.toolchain.cmake -DPLATFORM=OS64
-cmake --build . --config Release
+cmake .. -DBUILD_SHARED_LIBS=ON -DLLAMA_METAL=OFF -DLLAMA_BUILD_TESTS=OFF -DLLAMA_BUILD_EXAMPLES=OFF -DLLAMA_BUILD_SERVER=OFF -DCMAKE_TOOLCHAIN_FILE=../ios-cmake/ios.toolchain.cmake -DPLATFORM=OS64 || exit
+cmake --build . --config Release || exit
 
 # Tell user that the libraries have been created.
 echo "[AUB.AI] Native libraries have been generated successfully."
@@ -62,14 +62,31 @@ if [ ! -f "pubspec.yaml" ]; then
     exit 1
 fi
 
-# Create a few essential directories if they do not exist
-echo "[AUB.AI] Creating a few essential directories if they do not exist..."
-rm -rf ios/Frameworks || exit
-mkdir -p ios/Frameworks || exit
-
 # Copy over the dylib file to the iOS project
-echo "[AUB.AI] Adding llama.cpp to the iOS project..."
-cp src/llama.cpp/build/libllama.dylib ios/Frameworks/libllama.dylib || exit
+echo "[AUB.AI] Using lipo to create a framework for llama.cpp..."
+lipo -create src/llama.cpp/build/libllama.dylib -output ios/Frameworks/libllama.framework/libllama || exit
+
+echo "[AUB.AI] Running install_name_tool to fix the dylib paths..."
+install_name_tool -id @rpath/libllama.framework/libllama ios/Frameworks/libllama.framework/libllama || exit
+# install_name_tool -id @rpath/libllama.framework/libllama libllama || exit
+
+echo "[AUB.AI] For debugging convenience, running otool -L on the lib..."
+otool -L ios/Frameworks/libllama.framework/libllama
+
+# Important that the minos (13.0 at the time of writing) is the same as the minos (minimum iOS version) in
+# the iOS project. The app will still compile and work 100% fine, but when trying to validate the app for the
+# App Store, it will fail.
+#
+# NOTE: Make sure the minimum iOS version in the iOS project is the same as the minos below, or higher.
+echo "[AUB.AI] For debugging convenience, running vtool -show on the lib..."
+vtool -show ios/Frameworks/libllama.framework/libllama
+
+# # Create a few essential directories if they do not exist
+# echo "[AUB.AI] Creating a few essential directories if they do not exist..."
+# rm -rf ios/Frameworks || exit
+# mkdir -p ios/Frameworks || exit
+
+
 
 # Generate all required files
 echo "[AUB.AI] Generating Dart files..."

@@ -2227,13 +2227,17 @@ final class llama_context_params extends ffi.Struct {
   @ffi.Uint32()
   external int yarn_orig_ctx;
 
+  /// data type for K cache
+  @ffi.Int32()
+  external int type_k;
+
+  /// data type for V cache
+  @ffi.Int32()
+  external int type_v;
+
   /// if true, use experimental mul_mat_q kernels (DEPRECATED - always true)
   @ffi.Bool()
   external bool mul_mat_q;
-
-  /// use fp16 for KV cache, fp32 otherwise
-  @ffi.Bool()
-  external bool f16_kv;
 
   /// the llama_eval() call computes all logits, not just the last one
   @ffi.Bool()
@@ -2242,6 +2246,36 @@ final class llama_context_params extends ffi.Struct {
   /// embedding mode only
   @ffi.Bool()
   external bool embedding;
+
+  /// whether to offload the KQV ops (including the KV cache) to GPU
+  @ffi.Bool()
+  external bool offload_kqv;
+}
+
+abstract class ggml_type {
+  static const int GGML_TYPE_F32 = 0;
+  static const int GGML_TYPE_F16 = 1;
+  static const int GGML_TYPE_Q4_0 = 2;
+  static const int GGML_TYPE_Q4_1 = 3;
+
+  /// GGML_TYPE_Q4_2 = 4, support has been removed
+  /// GGML_TYPE_Q4_3 (5) support has been removed
+  static const int GGML_TYPE_Q5_0 = 6;
+  static const int GGML_TYPE_Q5_1 = 7;
+  static const int GGML_TYPE_Q8_0 = 8;
+  static const int GGML_TYPE_Q8_1 = 9;
+
+  /// k-quantizations
+  static const int GGML_TYPE_Q2_K = 10;
+  static const int GGML_TYPE_Q3_K = 11;
+  static const int GGML_TYPE_Q4_K = 12;
+  static const int GGML_TYPE_Q5_K = 13;
+  static const int GGML_TYPE_Q6_K = 14;
+  static const int GGML_TYPE_Q8_K = 15;
+  static const int GGML_TYPE_I8 = 16;
+  static const int GGML_TYPE_I16 = 17;
+  static const int GGML_TYPE_I32 = 18;
+  static const int GGML_TYPE_COUNT = 19;
 }
 
 /// model quantization parameters
@@ -2406,32 +2440,6 @@ final class ggml_tensor extends ffi.Struct {
   external ffi.Array<ffi.Char> padding;
 }
 
-abstract class ggml_type {
-  static const int GGML_TYPE_F32 = 0;
-  static const int GGML_TYPE_F16 = 1;
-  static const int GGML_TYPE_Q4_0 = 2;
-  static const int GGML_TYPE_Q4_1 = 3;
-
-  /// GGML_TYPE_Q4_2 = 4, support has been removed
-  /// GGML_TYPE_Q4_3 (5) support has been removed
-  static const int GGML_TYPE_Q5_0 = 6;
-  static const int GGML_TYPE_Q5_1 = 7;
-  static const int GGML_TYPE_Q8_0 = 8;
-  static const int GGML_TYPE_Q8_1 = 9;
-
-  /// k-quantizations
-  static const int GGML_TYPE_Q2_K = 10;
-  static const int GGML_TYPE_Q3_K = 11;
-  static const int GGML_TYPE_Q4_K = 12;
-  static const int GGML_TYPE_Q5_K = 13;
-  static const int GGML_TYPE_Q6_K = 14;
-  static const int GGML_TYPE_Q8_K = 15;
-  static const int GGML_TYPE_I8 = 16;
-  static const int GGML_TYPE_I16 = 17;
-  static const int GGML_TYPE_I32 = 18;
-  static const int GGML_TYPE_COUNT = 19;
-}
-
 abstract class ggml_backend_type {
   static const int GGML_BACKEND_CPU = 0;
   static const int GGML_BACKEND_GPU = 10;
@@ -2468,53 +2476,55 @@ abstract class ggml_op {
   static const int GGML_OP_RMS_NORM_BACK = 21;
   static const int GGML_OP_GROUP_NORM = 22;
   static const int GGML_OP_MUL_MAT = 23;
-  static const int GGML_OP_OUT_PROD = 24;
-  static const int GGML_OP_SCALE = 25;
-  static const int GGML_OP_SET = 26;
-  static const int GGML_OP_CPY = 27;
-  static const int GGML_OP_CONT = 28;
-  static const int GGML_OP_RESHAPE = 29;
-  static const int GGML_OP_VIEW = 30;
-  static const int GGML_OP_PERMUTE = 31;
-  static const int GGML_OP_TRANSPOSE = 32;
-  static const int GGML_OP_GET_ROWS = 33;
-  static const int GGML_OP_GET_ROWS_BACK = 34;
-  static const int GGML_OP_DIAG = 35;
-  static const int GGML_OP_DIAG_MASK_INF = 36;
-  static const int GGML_OP_DIAG_MASK_ZERO = 37;
-  static const int GGML_OP_SOFT_MAX = 38;
-  static const int GGML_OP_SOFT_MAX_BACK = 39;
-  static const int GGML_OP_ROPE = 40;
-  static const int GGML_OP_ROPE_BACK = 41;
-  static const int GGML_OP_ALIBI = 42;
-  static const int GGML_OP_CLAMP = 43;
-  static const int GGML_OP_CONV_TRANSPOSE_1D = 44;
-  static const int GGML_OP_IM2COL = 45;
-  static const int GGML_OP_CONV_TRANSPOSE_2D = 46;
-  static const int GGML_OP_POOL_1D = 47;
-  static const int GGML_OP_POOL_2D = 48;
+  static const int GGML_OP_MUL_MAT_ID = 24;
+  static const int GGML_OP_OUT_PROD = 25;
+  static const int GGML_OP_SCALE = 26;
+  static const int GGML_OP_SET = 27;
+  static const int GGML_OP_CPY = 28;
+  static const int GGML_OP_CONT = 29;
+  static const int GGML_OP_RESHAPE = 30;
+  static const int GGML_OP_VIEW = 31;
+  static const int GGML_OP_PERMUTE = 32;
+  static const int GGML_OP_TRANSPOSE = 33;
+  static const int GGML_OP_GET_ROWS = 34;
+  static const int GGML_OP_GET_ROWS_BACK = 35;
+  static const int GGML_OP_DIAG = 36;
+  static const int GGML_OP_DIAG_MASK_INF = 37;
+  static const int GGML_OP_DIAG_MASK_ZERO = 38;
+  static const int GGML_OP_SOFT_MAX = 39;
+  static const int GGML_OP_SOFT_MAX_BACK = 40;
+  static const int GGML_OP_ROPE = 41;
+  static const int GGML_OP_ROPE_BACK = 42;
+  static const int GGML_OP_ALIBI = 43;
+  static const int GGML_OP_CLAMP = 44;
+  static const int GGML_OP_CONV_TRANSPOSE_1D = 45;
+  static const int GGML_OP_IM2COL = 46;
+  static const int GGML_OP_CONV_TRANSPOSE_2D = 47;
+  static const int GGML_OP_POOL_1D = 48;
+  static const int GGML_OP_POOL_2D = 49;
 
   /// nearest interpolate
-  static const int GGML_OP_UPSCALE = 49;
-  static const int GGML_OP_FLASH_ATTN = 50;
-  static const int GGML_OP_FLASH_FF = 51;
-  static const int GGML_OP_FLASH_ATTN_BACK = 52;
-  static const int GGML_OP_WIN_PART = 53;
-  static const int GGML_OP_WIN_UNPART = 54;
-  static const int GGML_OP_GET_REL_POS = 55;
-  static const int GGML_OP_ADD_REL_POS = 56;
-  static const int GGML_OP_UNARY = 57;
-  static const int GGML_OP_MAP_UNARY = 58;
-  static const int GGML_OP_MAP_BINARY = 59;
-  static const int GGML_OP_MAP_CUSTOM1_F32 = 60;
-  static const int GGML_OP_MAP_CUSTOM2_F32 = 61;
-  static const int GGML_OP_MAP_CUSTOM3_F32 = 62;
-  static const int GGML_OP_MAP_CUSTOM1 = 63;
-  static const int GGML_OP_MAP_CUSTOM2 = 64;
-  static const int GGML_OP_MAP_CUSTOM3 = 65;
-  static const int GGML_OP_CROSS_ENTROPY_LOSS = 66;
-  static const int GGML_OP_CROSS_ENTROPY_LOSS_BACK = 67;
-  static const int GGML_OP_COUNT = 68;
+  static const int GGML_OP_UPSCALE = 50;
+  static const int GGML_OP_ARGSORT = 51;
+  static const int GGML_OP_FLASH_ATTN = 52;
+  static const int GGML_OP_FLASH_FF = 53;
+  static const int GGML_OP_FLASH_ATTN_BACK = 54;
+  static const int GGML_OP_WIN_PART = 55;
+  static const int GGML_OP_WIN_UNPART = 56;
+  static const int GGML_OP_GET_REL_POS = 57;
+  static const int GGML_OP_ADD_REL_POS = 58;
+  static const int GGML_OP_UNARY = 59;
+  static const int GGML_OP_MAP_UNARY = 60;
+  static const int GGML_OP_MAP_BINARY = 61;
+  static const int GGML_OP_MAP_CUSTOM1_F32 = 62;
+  static const int GGML_OP_MAP_CUSTOM2_F32 = 63;
+  static const int GGML_OP_MAP_CUSTOM3_F32 = 64;
+  static const int GGML_OP_MAP_CUSTOM1 = 65;
+  static const int GGML_OP_MAP_CUSTOM2 = 66;
+  static const int GGML_OP_MAP_CUSTOM3 = 67;
+  static const int GGML_OP_CROSS_ENTROPY_LOSS = 68;
+  static const int GGML_OP_CROSS_ENTROPY_LOSS_BACK = 69;
+  static const int GGML_OP_COUNT = 70;
 }
 
 /// Information associated with an individual cell in the KV cache view.
@@ -2775,4 +2785,4 @@ const int LLAMA_FILE_MAGIC_GGSN = 1734833006;
 
 const int LLAMA_SESSION_MAGIC = 1734833006;
 
-const int LLAMA_SESSION_VERSION = 2;
+const int LLAMA_SESSION_VERSION = 3;

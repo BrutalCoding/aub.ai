@@ -6,11 +6,11 @@ cmake_minimum_required(VERSION 3.14)
 project(aub_ai_library VERSION 0.0.1 LANGUAGES C CXX)
 
 # Add the directory containing llama.cpp to the include path
-#add_subdirectory(llama.cpp)
+add_subdirectory(llama.cpp)
 
-# Ensure that llama.cpp and any other relevant source files from its directory are correctly included in your CMakeLists.txt. This involves adding these source files to the add_library command alongside aub_ai.c.
+# Add your library target (.mm in this case, no more .c)
 add_library(aub_ai
-  aub_ai.c
+  aub_ai.mm
 )
 
 # Link your main library with the llama library

@@ -133,22 +133,22 @@ Stream<String> _generateResponse({
 
   int nPast = 0;
 
-  Pointer<Int32> embdInp = calloc<llama_token>(promptToProcess.length + 1);
+  Pointer<Int32> tokens = calloc<llama_token>(promptToProcess.length + 1);
   final int nMaxTokens = promptToProcess.length + 1;
 
   debugPrint('[AubAi] llama_tokenize');
 
-  final nOfTok = llamaCpp.llama_tokenize(
+  final int nOfTok = llamaCpp.llama_tokenize(
     model,
     prompt,
     promptToProcess.length,
-    embdInp,
+    tokens,
     nMaxTokens,
     true,
     true,
   );
 
-  embdInp = truncateMemory(embdInp, nOfTok, nOfTok);
+  tokens = truncateMemory(tokens, nOfTok, nOfTok);
   final nCtx = llamaCpp.llama_n_ctx(ctx);
 
   int nPredict = promptTemplate.contextSize;
@@ -180,9 +180,7 @@ Stream<String> _generateResponse({
   while (remainingTokens > 0) {
     if (embd.isNotEmpty) {
       final embdPointer = allocateIntArray(embd);
-
       llamaCpp.llama_eval(ctx, embdPointer, embd.length, nPast);
-
       calloc.free(embdPointer); // Freeing the pointer after using it
     }
 
@@ -228,10 +226,10 @@ Stream<String> _generateResponse({
       remainingTokens -= 1;
     } else {
       while (nOfTok > inputConsumed) {
-        embd.add(embdInp[inputConsumed]);
+        embd.add(tokens[inputConsumed]);
 
         lastNTokensData.removeAt(0);
-        lastNTokensData.add(embdInp[inputConsumed]);
+        lastNTokensData.add(tokens[inputConsumed]);
         inputConsumed++;
         if (embd.length >= nBatch) {
           break;
@@ -353,18 +351,22 @@ final DynamicLibrary _dylib = () {
   /// contains the native functions. The file name is platform dependent.
   const String libName = 'llama';
 
-  // Darwin (macOS and iOS)
-  if (Platform.isMacOS || Platform.isIOS) {
+  // macOS (x86_64, ARM64)
+  if (Platform.isMacOS) {
     return DynamicLibrary.open('lib$libName.dylib');
   }
 
-  // Android and Linux
-  if (Platform.isAndroid || Platform.isLinux) {
-    final soLoaded = DynamicLibrary.open('lib$libName.so');
-    return soLoaded;
+  // iOS (ARM64)
+  if (Platform.isIOS) {
+    return DynamicLibrary.process();
   }
 
-  // Windows
+  // Android (ARM64) and Linux (x86_64)
+  if (Platform.isAndroid || Platform.isLinux) {
+    return DynamicLibrary.open('lib$libName.so');
+  }
+
+  // Windows (x86_64)
   if (Platform.isWindows) {
     return DynamicLibrary.open('$libName.dll');
   }

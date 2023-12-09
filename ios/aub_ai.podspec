@@ -29,11 +29,11 @@ Pod::Spec.new do |s|
     'MTL_HEADER_SEARCH_PATHS' => '"${PROJECT_DIR}/.."/*',
    }
 
-  # The magical line that contains the llama.cpp binary.
-  s.vendored_libraries = 'Frameworks/libllama.dylib'
+  # Reference the llama.framework framework.
+  s.vendored_frameworks = 'Frameworks/libllama.framework'
 
   # Flutter.framework does not contain a i386 slice.
-  s.platform = :ios, '12.0'
+  s.platform = :ios, '11.0'
   s.pod_target_xcconfig = { 'DEFINES_MODULE' => 'YES', 'EXCLUDED_ARCHS[sdk=iphonesimulator*]' => 'i386' }
   s.swift_version = '5.0'
 end
