@@ -68,25 +68,15 @@ lipo -create src/llama.cpp/build/libllama.dylib -output ios/Frameworks/libllama.
 
 echo "[AUB.AI] Running install_name_tool to fix the dylib paths..."
 install_name_tool -id @rpath/libllama.framework/libllama ios/Frameworks/libllama.framework/libllama || exit
-# install_name_tool -id @rpath/libllama.framework/libllama libllama || exit
 
 echo "[AUB.AI] For debugging convenience, running otool -L on the lib..."
 otool -L ios/Frameworks/libllama.framework/libllama
 
-# Important that the minos (13.0 at the time of writing) is the same as the minos (minimum iOS version) in
-# the iOS project. The app will still compile and work 100% fine, but when trying to validate the app for the
-# App Store, it will fail.
-#
-# NOTE: Make sure the minimum iOS version in the iOS project is the same as the minos below, or higher.
+# It's important that the outputted 'minos' (13.0 at the time of writing) is the same as
+# the minimum iOS version in your iOS project.
+# If you don't do this, you will get an error or e-mail from Apple when trying to validate the app for the App Store.
 echo "[AUB.AI] For debugging convenience, running vtool -show on the lib..."
 vtool -show ios/Frameworks/libllama.framework/libllama
-
-# # Create a few essential directories if they do not exist
-# echo "[AUB.AI] Creating a few essential directories if they do not exist..."
-# rm -rf ios/Frameworks || exit
-# mkdir -p ios/Frameworks || exit
-
-
 
 # Generate all required files
 echo "[AUB.AI] Generating Dart files..."
