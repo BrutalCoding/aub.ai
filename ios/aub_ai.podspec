@@ -19,11 +19,9 @@ Pod::Spec.new do |s|
   # `../src/*` so that the C sources can be shared among all target platforms.
   s.source           = { :path => '.' }
   s.source_files     = 'Classes/**/*'
-  # s.resources        = 'Resources/**/*' # ERROR | [iOS] file patterns: The `resources` pattern did not match any file.
   s.dependency 'Flutter'
 
   s.xcconfig = {
-    # 'OTHER_LDFLAGS' => '-lllama', # The OTHER_LDFLAGS is set to -lllama, which is usually used for linking dynamic libraries. Since libllama.a is a static library, this flag might not be necessary. However, it shouldn't cause an issue if left as is.
     'USER_HEADER_SEARCH_PATHS' => '"${PROJECT_DIR}/.."/',
     "LIBRARY_SEARCH_PATHS" => '"${PROJECT_DIR}/.."/*',
     'MTL_HEADER_SEARCH_PATHS' => '"${PROJECT_DIR}/.."/*',

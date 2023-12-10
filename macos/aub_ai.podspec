@@ -11,7 +11,7 @@ Pod::Spec.new do |s|
                        DESC
   s.homepage         = 'https://brutalcoding.com'
   s.license          = { :file => '../LICENSE' }
-  s.author           = { 'Daniel Breedeveld' => 'daniel@brutalcoding.com.com' }
+  s.author           = { 'Daniel Breedeveld' => 'daniel@brutalcoding.com' }
 
   # This will ensure the source files in Classes/ are included in the native
   # builds of apps using this FFI plugin. Podspec does not support relative
@@ -19,19 +19,11 @@ Pod::Spec.new do |s|
   # `../src/*` so that the C sources can be shared among all target platforms.
   s.source           = { :path => '.' }
   s.source_files     = 'Classes/**/*'
-  s.resources        = 'Resources/**/*'
   s.dependency 'FlutterMacOS'
-
-  s.xcconfig = {
-   'OTHER_LDFLAGS' => '-lllama',
-   'USER_HEADER_SEARCH_PATHS' => '"${PROJECT_DIR}/.."/',
-   "LIBRARY_SEARCH_PATHS" => '"${PROJECT_DIR}/.."/*',
-   'MTL_HEADER_SEARCH_PATHS' => '"${PROJECT_DIR}/.."/*',
-  }
 
   # This will add libllama.dylib to the Frameworks directory of the example/ app
   # when it is built for device and simulator.
-  s.vendored_libraries = 'Frameworks/libllama.dylib' # If .a doesnt work, use 'Frameworks/libllama.dylib'
+  s.vendored_libraries = 'Frameworks/libllama.dylib'
 
   s.platform = :osx, '10.11'
   s.pod_target_xcconfig = { 'DEFINES_MODULE' => 'YES' }
