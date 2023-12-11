@@ -62,6 +62,25 @@ Consider becoming a sponsor. While the idea of this project is to make AI access
 
 If you're a wealthy individual that was about to purchase a big luxury yacht, consider one less gold-plated knob on the steering wheel and use that money to add your name to the list of sponsors.
 
+## Download the Example App
+
+### AI for Everyone
+
+The goal is to make AI accessible to everyone, right? That's why I've spent quite some time on making sure that the
+example app is available to download on all major platforms. I want to make it as easy as possible for everyone to try out. Nothing better than a real-world example to see what AubAI is capable of.
+
+No technical knowledge required. Just download the app, and you're good to go.
+
+### Download the Example App from the stores
+
+- iOS, iPadOS, macOS
+  - [Invite link to TestFlight](https://testflight.apple.com/join/XuTpIgyY)
+- Android: (Coming soon)
+- Windows: (Coming soon)
+- Linux: (Coming soon)
+
+Make sure to to hit the "Star" button on this project if you like it. Perhaps one day my landlord will accept GitHub stars as a form of payment!
+
 ## Setup
 
 1. Add the following to your `pubspec.yaml` file:
