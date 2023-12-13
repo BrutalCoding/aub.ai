@@ -59,8 +59,6 @@ mkdir -p android/src/main/jniLibs/arm64-v8a
 # Copy over the files to the Android project
 echo "[AUB.AI] Adding llama.cpp to the Android project..."
 cp src/build/llama.cpp/libllama.so android/src/main/jniLibs/arm64-v8a/libllama.so || exit
-cp src/build/llama.cpp/libggml_shared.so android/src/main/jniLibs/arm64-v8a/libggml_shared.so || exit
-
 
 # Generate all required files
 echo "[AUB.AI] Generating Dart files..."
@@ -69,12 +67,3 @@ dart run ffigen --config ffigen.yaml # Generate files for ffigen, see ffigen.yam
 
 # Notify user that AUB is ready to use.
 printf "[AUB.AI] Thanks for flying with Aub.ai today, the setup took off with success.\n\n"
-
-# Run the example app if the user wants to
-printf "[AUB.AI] Do you want to run the example app? (y/n): "
-read -r run_example
-if [ "$run_example" = "y" ]; then
-    printf "[AUB.AI] Running the example app...\n"
-    cd example || exit
-    flutter run
-fi

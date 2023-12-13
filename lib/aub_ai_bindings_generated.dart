@@ -2239,7 +2239,7 @@ final class llama_context_params extends ffi.Struct {
   @ffi.Bool()
   external bool mul_mat_q;
 
-  /// the llama_eval() call computes all logits, not just the last one
+  /// the llama_eval() call computes all logits, not just the last one (DEPRECATED - set llama_batch.logits instead)
   @ffi.Bool()
   external bool logits_all;
 
