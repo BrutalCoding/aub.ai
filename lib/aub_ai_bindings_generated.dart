@@ -2383,9 +2383,6 @@ final class ggml_tensor extends ffi.Struct {
 
   external ffi.Pointer<ggml_backend_buffer> buffer;
 
-  @ffi.Int()
-  external int n_dims;
-
   /// number of elements
   @ffi.Array.multi([4])
   external ffi.Array<ffi.Int64> ne;
@@ -2410,7 +2407,7 @@ final class ggml_tensor extends ffi.Struct {
 
   external ffi.Pointer<ggml_tensor> grad;
 
-  @ffi.Array.multi([6])
+  @ffi.Array.multi([10])
   external ffi.Array<ffi.Pointer<ggml_tensor>> src;
 
   /// performance
@@ -2436,7 +2433,7 @@ final class ggml_tensor extends ffi.Struct {
   /// extra things e.g. for ggml-cuda.cu
   external ffi.Pointer<ffi.Void> extra;
 
-  @ffi.Array.multi([12])
+  @ffi.Array.multi([8])
   external ffi.Array<ffi.Char> padding;
 }
 
@@ -2505,26 +2502,28 @@ abstract class ggml_op {
 
   /// nearest interpolate
   static const int GGML_OP_UPSCALE = 50;
-  static const int GGML_OP_ARGSORT = 51;
-  static const int GGML_OP_FLASH_ATTN = 52;
-  static const int GGML_OP_FLASH_FF = 53;
-  static const int GGML_OP_FLASH_ATTN_BACK = 54;
-  static const int GGML_OP_WIN_PART = 55;
-  static const int GGML_OP_WIN_UNPART = 56;
-  static const int GGML_OP_GET_REL_POS = 57;
-  static const int GGML_OP_ADD_REL_POS = 58;
-  static const int GGML_OP_UNARY = 59;
-  static const int GGML_OP_MAP_UNARY = 60;
-  static const int GGML_OP_MAP_BINARY = 61;
-  static const int GGML_OP_MAP_CUSTOM1_F32 = 62;
-  static const int GGML_OP_MAP_CUSTOM2_F32 = 63;
-  static const int GGML_OP_MAP_CUSTOM3_F32 = 64;
-  static const int GGML_OP_MAP_CUSTOM1 = 65;
-  static const int GGML_OP_MAP_CUSTOM2 = 66;
-  static const int GGML_OP_MAP_CUSTOM3 = 67;
-  static const int GGML_OP_CROSS_ENTROPY_LOSS = 68;
-  static const int GGML_OP_CROSS_ENTROPY_LOSS_BACK = 69;
-  static const int GGML_OP_COUNT = 70;
+  static const int GGML_OP_PAD = 51;
+  static const int GGML_OP_ARGSORT = 52;
+  static const int GGML_OP_LEAKY_RELU = 53;
+  static const int GGML_OP_FLASH_ATTN = 54;
+  static const int GGML_OP_FLASH_FF = 55;
+  static const int GGML_OP_FLASH_ATTN_BACK = 56;
+  static const int GGML_OP_WIN_PART = 57;
+  static const int GGML_OP_WIN_UNPART = 58;
+  static const int GGML_OP_GET_REL_POS = 59;
+  static const int GGML_OP_ADD_REL_POS = 60;
+  static const int GGML_OP_UNARY = 61;
+  static const int GGML_OP_MAP_UNARY = 62;
+  static const int GGML_OP_MAP_BINARY = 63;
+  static const int GGML_OP_MAP_CUSTOM1_F32 = 64;
+  static const int GGML_OP_MAP_CUSTOM2_F32 = 65;
+  static const int GGML_OP_MAP_CUSTOM3_F32 = 66;
+  static const int GGML_OP_MAP_CUSTOM1 = 67;
+  static const int GGML_OP_MAP_CUSTOM2 = 68;
+  static const int GGML_OP_MAP_CUSTOM3 = 69;
+  static const int GGML_OP_CROSS_ENTROPY_LOSS = 70;
+  static const int GGML_OP_CROSS_ENTROPY_LOSS_BACK = 71;
+  static const int GGML_OP_COUNT = 72;
 }
 
 /// Information associated with an individual cell in the KV cache view.

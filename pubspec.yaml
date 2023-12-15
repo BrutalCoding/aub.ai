@@ -1,6 +1,6 @@
 name: aub_ai
 description: AubAI brings you on-device gen-AI capabilities, including offline text generation and more, directly within your app.
-version: 1.0.3
+version: 1.1.0
 homepage: https://aub.ai
 repository: https://github.com/BrutalCoding/aub.ai
 issue_tracker: https://github.com/BrutalCoding/aub.ai/issues
