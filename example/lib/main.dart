@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'package:aub_ai/aub_ai.dart';
 import 'package:aub_ai/data/prompt_template.dart';
+import 'package:chat_bubbles/chat_bubbles.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 
@@ -45,6 +46,12 @@ class _MyAppState extends State<MyApp> {
 
   @override
   Widget build(BuildContext context) {
+    List<String> convoParts = textControllerFullConversation.text
+        .split('<|im_start|>')
+        .where(
+          (element) => element.isNotEmpty,
+        )
+        .toList();
     return MaterialApp(
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
@@ -67,8 +74,8 @@ class _MyAppState extends State<MyApp> {
                       );
                     }
                   : null,
-              icon: const Icon(Icons.restore_sharp),
-              tooltip: 'Start over',
+              icon: const Icon(Icons.delete_outline),
+              tooltip: 'Reset the conversation, pick a new model file',
             ),
           ],
         ),
@@ -78,234 +85,214 @@ class _MyAppState extends State<MyApp> {
               constraints: const BoxConstraints(
                 maxWidth: 960,
               ),
-              child: SingleChildScrollView(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.spaceAround,
-                  children: [
-                    const CircleAvatar(
-                      minRadius: 64,
-                      maxRadius: 128,
-                      backgroundImage: AssetImage(
-                        'assets/appicon_avatar.png',
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.spaceAround,
+                children: [
+                  const Column(
+                    children: [
+                      CircleAvatar(
+                        minRadius: 32,
+                        maxRadius: 64,
+                        backgroundImage: AssetImage(
+                          'assets/appicon_avatar.png',
+                        ),
                       ),
-                    ),
-                    const SizedBox(height: 16),
-                    const Text(
-                      'Daniel Breedeveld',
-                      style: TextStyle(
-                        fontSize: 12,
-                        fontWeight: FontWeight.bold,
+                      SizedBox(height: 16),
+                      Text(
+                        'Daniel Breedeveld',
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.bold,
+                        ),
                       ),
-                    ),
-                    const SizedBox(height: 16),
-                    const Text(
-                      'Ask me anything!',
-                      style: TextStyle(
-                        fontSize: 24,
-                        fontWeight: FontWeight.bold,
+                      SizedBox(height: 16),
+                      Text(
+                        'Ask me anything!',
+                        style: TextStyle(
+                          fontSize: 24,
+                          fontWeight: FontWeight.bold,
+                        ),
                       ),
-                    ),
-                    const SizedBox(height: 16),
-                    if (file == null)
-                      // Ask user to select a file
-                      Column(
-                        children: [
-                          const Padding(
-                            padding: EdgeInsets.all(8.0),
-                            child: Text(
-                              'In order to start, please select a model file from your device',
-                              textAlign: TextAlign.center,
-                              style: TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                          ),
-                          // Description of what this file is about.
-                          // This is the file that contains the knowledge of the AI.
-                          // Text widget:
-                          const Text(
-                            'This file is what contains the knowledge of the AI',
-                            textAlign: TextAlign.center,
-                            style: TextStyle(
-                              fontSize: 12,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                          // Button to select a file
-                          Padding(
-                            padding: const EdgeInsets.all(8.0),
-                            child: ElevatedButton(
-                              onPressed: () async {
-                                FilePickerResult? result =
-                                    await FilePicker.platform.pickFiles();
+                    ],
+                  ),
+                  Expanded(
+                    flex: 2,
+                    child: convoParts.length > 1
+                        ? ListView.builder(
+                            keyboardDismissBehavior:
+                                ScrollViewKeyboardDismissBehavior.onDrag,
+                            shrinkWrap: true,
+                            padding: const EdgeInsets.all(8),
+                            itemCount: convoParts.length,
+                            itemBuilder: (context, index) {
+                              final String text = convoParts
+                                  .elementAt(index)
+                                  .replaceAll('<|im_end|>', '')
+                                  .trim();
 
-                                if (result == null) {
-                                  return;
-                                }
-
-                                final tmpFile = File(result.files.single.path!);
-                                setState(() {
-                                  file = tmpFile;
-                                });
-                              },
-                              child: const Text('Pick a file'),
-                            ),
-                          ),
-                        ],
-                      ),
-                    Center(
-                      child: Container(
-                        padding: const EdgeInsets.all(8),
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Center(
-                                child: Column(
-                              children: [
-                                // Show output from AI in a TextField
-                                if (talkAsyncState == TalkAsyncState.talking ||
-                                    textControllerFullConversation
-                                        .text.isNotEmpty) ...[
-                                  Padding(
-                                    padding: const EdgeInsets.all(8.0),
-                                    child: TextField(
-                                      controller:
-                                          textControllerFullConversation,
-                                      maxLines: 10,
-                                      decoration: const InputDecoration(
-                                        border: OutlineInputBorder(),
-                                      ),
-                                    ),
+                              return Padding(
+                                padding: const EdgeInsets.all(8.0),
+                                child: BubbleSpecialThree(
+                                  text: text,
+                                  color: text.startsWith('user')
+                                      ? const Color(0xFF1B97F3)
+                                      : const Color(0xFFE8E8EE),
+                                  tail: true,
+                                  textStyle: TextStyle(
+                                    color: text.startsWith('user')
+                                        ? Colors.white
+                                        : Colors.black,
+                                    fontSize: 14,
                                   ),
-                                ],
-                                if (talkAsyncState == TalkAsyncState.thinking &&
-                                    textControllerFullConversation.text.isEmpty)
-                                  const Center(
-                                    child: Column(
-                                      mainAxisAlignment:
-                                          MainAxisAlignment.center,
-                                      mainAxisSize: MainAxisSize.max,
-                                      children: [
-                                        // Prompt that was sent to the AI
-                                        Text(
-                                          "Thinking...",
+                                  isSender: text.startsWith('user'),
+                                ),
+                              );
+                            },
+                          )
+                        : Center(
+                            child: file != null
+                                ? const Text(
+                                    'Start a conversation by sending a prompt to the AI',
+                                    textAlign: TextAlign.center,
+                                    style: TextStyle(
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.w100,
+                                    ),
+                                  )
+                                : Column(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    children: [
+                                      const Padding(
+                                        padding: EdgeInsets.all(8.0),
+                                        child: Text(
+                                          'In order to start, please select a model file from your device',
                                           textAlign: TextAlign.center,
                                           style: TextStyle(
-                                            fontSize: 12,
+                                            fontSize: 16,
                                             fontWeight: FontWeight.bold,
                                           ),
                                         ),
-                                        SizedBox(height: 32),
-                                        CircularProgressIndicator.adaptive(),
-                                      ],
+                                      ),
+                                      // Description of what this file is about.
+                                      // This is the file that contains the knowledge of the AI.
+                                      // Text widget:
+                                      const Text(
+                                        'This app is tailored for GGUF models in the ChatML format.',
+                                        textAlign: TextAlign.center,
+                                        style: TextStyle(
+                                          fontSize: 12,
+                                          fontWeight: FontWeight.w300,
+                                        ),
+                                      ),
+                                      // Button to select a file
+                                      Padding(
+                                        padding: const EdgeInsets.all(8.0),
+                                        child: ElevatedButton(
+                                          onPressed: () async {
+                                            FilePickerResult? result =
+                                                await FilePicker.platform
+                                                    .pickFiles();
+
+                                            if (result == null) {
+                                              return;
+                                            }
+
+                                            final tmpFile =
+                                                File(result.files.single.path!);
+                                            setState(() {
+                                              file = tmpFile;
+                                            });
+                                          },
+                                          child: const Text('Pick a file'),
+                                        ),
+                                      ),
+                                    ],
+                                  )),
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.all(8.0),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Expanded(
+                          child: TextField(
+                            controller: textControllerUserPrompt,
+                            textCapitalization: TextCapitalization.sentences,
+                            onSubmitted: (_) => _sendPromptToAi(
+                              textControllerUserPrompt.text,
+                            ),
+                            enabled: file != null &&
+                                talkAsyncState == TalkAsyncState.idle,
+                            decoration: const InputDecoration(
+                              border: OutlineInputBorder(),
+
+                              // Display a hint text when the conversation has not started yet.
+                              hintText: 'Write something...',
+                            ),
+                          ),
+                        ),
+                        Flexible(
+                          child: Padding(
+                            padding: const EdgeInsets.all(8.0),
+                            child: Stack(
+                              children: [
+                                Tooltip(
+                                  // When the AI is busy, the tooltip will
+                                  // show the reason why the button is disabled
+                                  waitDuration: const Duration(seconds: 1),
+                                  message: talkAsyncState ==
+                                              TalkAsyncState.thinking ||
+                                          talkAsyncState ==
+                                              TalkAsyncState.talking
+                                      ? 'The AI is busy, please wait...'
+                                      : 'Send this prompt to the AI in order to get a response',
+                                  child: ElevatedButton.icon(
+                                    style: ElevatedButton.styleFrom(
+                                      shape: const RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.all(
+                                          Radius.circular(8),
+                                        ),
+                                      ),
+                                      minimumSize: const Size(0, 64),
+                                    ),
+                                    onPressed: file != null &&
+                                            talkAsyncState ==
+                                                TalkAsyncState.idle
+                                        ? () => _sendPromptToAi(
+                                              textControllerUserPrompt.text,
+                                            )
+                                        : null,
+                                    icon: const Icon(Icons.send),
+                                    label: const Text('Send'),
+                                  ),
+                                ),
+
+                                // Show a progress indicator when the AI is thinking
+                                if (talkAsyncState == TalkAsyncState.thinking ||
+                                    talkAsyncState == TalkAsyncState.talking)
+                                  const Positioned.fill(
+                                    child: Align(
+                                      alignment: Alignment.bottomCenter,
+                                      child: Padding(
+                                        padding: EdgeInsets.symmetric(
+                                          horizontal: 4,
+                                        ),
+                                        child: LinearProgressIndicator(
+                                          borderRadius: BorderRadius.all(
+                                            Radius.circular(16),
+                                          ),
+                                        ),
+                                      ),
                                     ),
                                   ),
                               ],
-                            )),
-                            Padding(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 16,
-                                vertical: 8,
-                              ),
-                              child: Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  Expanded(
-                                    child: TextField(
-                                      controller: textControllerUserPrompt,
-                                      textCapitalization:
-                                          TextCapitalization.sentences,
-                                      onSubmitted: (_) => _sendPromptToAi(
-                                        textControllerUserPrompt.text,
-                                      ),
-                                      enabled: file != null &&
-                                          talkAsyncState == TalkAsyncState.idle,
-                                      decoration: const InputDecoration(
-                                        border: OutlineInputBorder(),
-
-                                        // Display a hint text when the conversation has not started yet.
-                                        hintText: 'Write something...',
-                                      ),
-                                    ),
-                                  ),
-                                  Flexible(
-                                    child: Padding(
-                                      padding: const EdgeInsets.all(8.0),
-                                      child: Stack(
-                                        children: [
-                                          Tooltip(
-                                            // When the AI is busy, the tooltip will
-                                            // show the reason why the button is disabled
-                                            waitDuration:
-                                                const Duration(seconds: 1),
-                                            message: talkAsyncState ==
-                                                        TalkAsyncState
-                                                            .thinking ||
-                                                    talkAsyncState ==
-                                                        TalkAsyncState.talking
-                                                ? 'The AI is busy, please wait...'
-                                                : 'Send this prompt to the AI in order to get a response',
-                                            child: ElevatedButton.icon(
-                                              style: ElevatedButton.styleFrom(
-                                                shape:
-                                                    const RoundedRectangleBorder(
-                                                  borderRadius:
-                                                      BorderRadius.all(
-                                                    Radius.circular(8),
-                                                  ),
-                                                ),
-                                                minimumSize: const Size(0, 64),
-                                              ),
-                                              onPressed: file != null &&
-                                                      talkAsyncState ==
-                                                          TalkAsyncState.idle
-                                                  ? () => _sendPromptToAi(
-                                                        textControllerUserPrompt
-                                                            .text,
-                                                      )
-                                                  : null,
-                                              icon: const Icon(Icons.send),
-                                              label: const Text('Send'),
-                                            ),
-                                          ),
-
-                                          // Show a progress indicator when the AI is thinking
-                                          if (talkAsyncState ==
-                                                  TalkAsyncState.thinking ||
-                                              talkAsyncState ==
-                                                  TalkAsyncState.talking)
-                                            const Positioned.fill(
-                                              child: Align(
-                                                alignment:
-                                                    Alignment.bottomCenter,
-                                                child: Padding(
-                                                  padding: EdgeInsets.symmetric(
-                                                    horizontal: 4,
-                                                  ),
-                                                  child:
-                                                      LinearProgressIndicator(
-                                                    borderRadius:
-                                                        BorderRadius.all(
-                                                      Radius.circular(16),
-                                                    ),
-                                                  ),
-                                                ),
-                                              ),
-                                            ),
-                                        ],
-                                      ),
-                                    ),
-                                  ),
-                                ],
-                              ),
                             ),
-                          ],
+                          ),
                         ),
-                      ),
+                      ],
                     ),
-                  ],
-                ),
+                  ),
+                ],
               ),
             ),
           ),
@@ -384,9 +371,12 @@ class _MyAppState extends State<MyApp> {
       },
     );
 
+    textControllerUserPrompt.clear();
+    textControllerFullConversation.text =
+        textControllerFullConversation.text.trimLeft();
+
     // Change the state back to idle when the AI is done talking
     setState(() {
-      textControllerUserPrompt.clear();
       talkAsyncState = TalkAsyncState.idle;
     });
   }

@@ -44,6 +44,7 @@ dependencies:
   cupertino_icons: ^1.0.6
   path_provider: ^2.1.1
   file_picker: ^6.1.1
+  chat_bubbles: ^1.5.0
 
 dev_dependencies:
   flutter_test:
