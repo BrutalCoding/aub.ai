@@ -7,7 +7,7 @@ import 'dart:isolate';
 import 'dart:math';
 import 'dart:typed_data';
 
-import 'package:aub_ai/prompt_template.dart';
+import 'package:aub_ai/data/prompt_template.dart';
 import 'package:ffi/ffi.dart';
 import 'package:flutter/foundation.dart';
 
@@ -83,65 +83,78 @@ Stream<String> _generateResponse({
   required PromptTemplate promptTemplate,
 }) async* {
   final AubAiBindings llamaCpp = aubAiBindings;
-  final llama_model_params lparams = llamaCpp.llama_model_default_params();
-  final llama_context_params cparams = llamaCpp.llama_context_default_params();
-
-  debugPrint("[AubAi] AI model file path loading from: $filePathToModel");
 
   // Check if the file exists
+  debugPrint("[AUB.AI] AI model file path loading from: $filePathToModel");
   final File file = File(filePathToModel);
   if (!file.existsSync()) {
     throw Exception('File does not exist: $filePathToModel');
   }
 
   final Pointer<Char> modelPath = filePathToModel.toNativeUtf8().cast<Char>();
-
-  final Pointer<llama_model> model = llamaCpp.llama_load_model_from_file(
+  final llama_model_params llamaModelParams =
+      llamaCpp.llama_model_default_params();
+  final Pointer<llama_model> llamaModel = llamaCpp.llama_load_model_from_file(
     modelPath,
-    lparams,
+    llamaModelParams,
   );
 
-  // If promptTemplate is ChatML, we replace the prompt with the user's input.
-  String promptToProcess = promptTemplate.promptTemplate;
-  if (promptTemplate.runtimeType == PromptTemplate.chatML().runtimeType) {
-    promptToProcess = promptToProcess
-        .replaceAll('{prompt}', promptTemplate.prompt)
-        .replaceAll(
-          '{systemMessage}',
-          promptTemplate.systemMessage,
-        );
-  }
+  final String promptTemplateToProcess = promptTemplate.template;
+  debugPrint("[AUB.AI] promptTemplateToProcess: $promptTemplateToProcess");
 
-  final Pointer<Char> prompt = promptToProcess.toNativeUtf8() as Pointer<Char>;
+  // LLaMa context parameters. These are configurable parameters that can be
+  // used to control the behaviour of the AI model.
+  final llama_context_params llamaCtxDefaultParams =
+      llamaCpp.llama_context_default_params();
+  final Pointer<llama_context_params> llamaCtxParamsPtr =
+      calloc<llama_context_params>();
+  llamaCtxParamsPtr.ref = llamaCtxDefaultParams;
 
-  final Pointer<llama_context> ctx =
-      llamaCpp.llama_new_context_with_model(model, cparams);
-  debugPrint('[AubAi] llama_new_context_with_model(model, cparams)');
+  // Override the default parameters with the parameters from the prompt template.
+  llamaCtxParamsPtr.ref.n_ctx =
+      promptTemplate.contextSize ?? llamaCtxDefaultParams.n_ctx;
+  llamaCtxParamsPtr.ref.seed =
+      promptTemplate.randomSeedNumber ?? llamaCtxDefaultParams.seed;
 
-  // Set seed to 0 to disable randomization
-  llamaCpp.llama_set_rng_seed(ctx, 50);
+  // Dart gives us the number of total threads which is what we want.
+  // For example, on a Apple MBP with M1 Pro, this will return 10 cores that
+  // will be utilized by llama.cpp. At the time of writing, the default value
+  // of n_threads that llama.cpp defaults to is 4.
+  llamaCtxParamsPtr.ref.n_threads =
+      promptTemplate.cpuThreadsToUse ?? Platform.numberOfProcessors;
+
+  debugPrint(
+      "[AUB.AI] Updated n_ctx from: ${llamaCtxDefaultParams.n_ctx} (default) -> ${llamaCtxParamsPtr.ref.n_ctx} (new)");
+  debugPrint(
+      "[AUB.AI] Updated seed from: ${llamaCtxDefaultParams.seed} (default) -> ${llamaCtxParamsPtr.ref.seed} (new)");
+  debugPrint(
+      "[AUB.AI] Updated n_threads from: ${llamaCtxDefaultParams.n_threads} (default) -> ${llamaCtxParamsPtr.ref.n_threads} (new)");
+
+  final Pointer<llama_context> llamaCtxPtr =
+      llamaCpp.llama_new_context_with_model(llamaModel, llamaCtxParamsPtr.ref);
+  debugPrint('[AUB.AI] llama_new_context_with_model(...)');
 
   // Here we're creating a list of length 4 and putting the items of tmp in it.
   final List<int> tmp = [0, 1, 2, 3];
   final Pointer<Int32> tmpPointer = allocateIntArray(tmp); //correct
-  debugPrint('[AubAi] allocateIntArray(tmp)');
-  llamaCpp.llama_eval(ctx, tmpPointer, tmp.length, 0);
 
-  debugPrint('[AubAi] llama_add_bos_token(model) (1/2)');
-  llamaCpp.llama_add_eos_token(model);
-  debugPrint('[AubAi] llama_add_eos_token(model) (2/2)');
+  llamaCpp.llama_eval(llamaCtxPtr, tmpPointer, tmp.length, 0);
+  llamaCpp.llama_add_eos_token(llamaModel);
 
   int nPast = 0;
 
-  Pointer<Int32> tokens = calloc<llama_token>(promptToProcess.length + 1);
-  final int nMaxTokens = promptToProcess.length + 1;
+  Pointer<Int32> tokens =
+      calloc<llama_token>(promptTemplateToProcess.length + 1);
 
-  debugPrint('[AubAi] llama_tokenize');
+  final int nMaxTokens = promptTemplateToProcess.length + 1;
+  final Pointer<Char> prompt =
+      promptTemplateToProcess.toNativeUtf8() as Pointer<Char>;
 
+  debugPrint('[AUB.AI] llama_tokenize');
   final int nOfTok = llamaCpp.llama_tokenize(
-    model,
+    llamaModel,
     prompt,
-    promptToProcess.length,
+    promptTemplateToProcess.length,
     tokens,
     nMaxTokens,
     true,
@@ -149,14 +162,13 @@ Stream<String> _generateResponse({
   );
 
   tokens = truncateMemory(tokens, nOfTok, nOfTok);
-  final nCtx = llamaCpp.llama_n_ctx(ctx);
+  final nCtx = llamaCpp.llama_n_ctx(llamaCtxPtr);
 
-  int nPredict = promptTemplate.contextSize;
+  int nPredict = llamaCtxParamsPtr.ref.n_ctx;
   nPredict = min(nPredict, nCtx - nOfTok);
 
   int inputConsumed = 0;
   bool inputNoecho = false;
-
   int remainingTokens = nPredict;
 
   // The list of tokens to be fed to the model
@@ -171,16 +183,46 @@ Stream<String> _generateResponse({
   const frequencyPenalty = 0.0;
   const presencePenalty = 0.0;
 
-  // Keep track of the whole convo and end once
-  // the end of string token has been detected.
-  String aiCompleteOutput = "";
-  bool aiStartEosDetected = false;
-  bool aiStopEosDetected = false;
+  // This is used to end the conversation when a new end of string token is
+  // generated by the AI model.
+  final String? eosToken = promptTemplate.eosToken;
 
-  while (remainingTokens > 0) {
+  // Count the amount of end of string tokens in the prompt.
+  int eosCount = 0;
+  if (eosToken != null) {
+    eosCount = promptTemplateToProcess.split(eosToken).length - 1;
+    debugPrint(
+      '[AUB.AI] Amount of EOS tokens in prompt: $eosCount. EOS token: $eosToken.',
+    );
+  }
+
+  // The conversation that is generated by the AI model.
+  // This is the existing prompt (conversation) + the response generated by the AI model.
+  String conversation = '';
+
+  // This is used to end the conversation when a new end of string token is
+  // generated by the AI model.
+  bool isConversationEnded = false;
+
+  while (remainingTokens > 0 && !isConversationEnded) {
+    // Check if the AI model has generated a new end of string token.
+    // If so, we end the conversation.
+    if (eosToken != null) {
+      final int amountOfEosTokensInConversation =
+          conversation.split(eosToken).length - 1;
+      if (amountOfEosTokensInConversation > eosCount) {
+        // The AI model has generated a new end of string token, so we
+        // end the conversation.
+        isConversationEnded = true;
+        debugPrint(
+          '[AUB.AI] AI model has generated a new end of string token, so we end the conversation.',
+        );
+      }
+    }
+
     if (embd.isNotEmpty) {
-      final embdPointer = allocateIntArray(embd);
-      llamaCpp.llama_eval(ctx, embdPointer, embd.length, nPast);
+      final Pointer<Int32> embdPointer = allocateIntArray(embd);
+      llamaCpp.llama_eval(llamaCtxPtr, embdPointer, embd.length, nPast);
       calloc.free(embdPointer); // Freeing the pointer after using it
     }
 
@@ -188,9 +230,9 @@ Stream<String> _generateResponse({
     embd.clear();
 
     if (nOfTok <= inputConsumed) {
-      final logits = llamaCpp.llama_get_logits(ctx);
-      final nVocab = llamaCpp.llama_n_vocab(model);
-      final arr = calloc<llama_token_data>(nVocab);
+      final Pointer<Float> logits = llamaCpp.llama_get_logits(llamaCtxPtr);
+      final int nVocab = llamaCpp.llama_n_vocab(llamaModel);
+      final Pointer<llama_token_data> arr = calloc<llama_token_data>(nVocab);
 
       for (int tokenId = 0; tokenId < nVocab; tokenId++) {
         arr[tokenId].id = tokenId;
@@ -205,7 +247,7 @@ Stream<String> _generateResponse({
 
       final allocatedArray = allocateIntArray(lastNTokensData);
       llamaCpp.llama_sample_repetition_penalties(
-        ctx,
+        llamaCtxPtr,
         candidatesP,
         allocatedArray,
         lastNRepeat,
@@ -214,10 +256,14 @@ Stream<String> _generateResponse({
         presencePenalty,
       );
 
-      llamaCpp.llama_sample_top_k(ctx, candidatesP, 40, 1);
-      llamaCpp.llama_sample_top_p(ctx, candidatesP, 0.8, 1);
-      llamaCpp.llama_sample_temperature(ctx, candidatesP, 0.4);
-      final id = llamaCpp.llama_sample_token(ctx, candidatesP);
+      llamaCpp.llama_sample_top_k(llamaCtxPtr, candidatesP, 40, 1);
+      llamaCpp.llama_sample_top_p(llamaCtxPtr, candidatesP, 0.8, 1);
+      llamaCpp.llama_sample_temperature(
+        llamaCtxPtr,
+        candidatesP,
+        promptTemplate.temperature ?? 0.4,
+      );
+      final int id = llamaCpp.llama_sample_token(llamaCtxPtr, candidatesP);
 
       lastNTokensData = [...lastNTokensData.sublist(1), id];
 
@@ -242,8 +288,8 @@ Stream<String> _generateResponse({
         const int size = 32;
         final Pointer<Char> buffer = calloc<Char>(size);
 
-        final n = llamaCpp.llama_token_to_piece(
-          model,
+        final int n = llamaCpp.llama_token_to_piece(
+          llamaModel,
           id,
           buffer,
           size,
@@ -254,16 +300,18 @@ Stream<String> _generateResponse({
         final Uint8List list = byteBuffer.asUint8List();
 
         try {
-          final decodedToken = utf8.decode(
+          final String decodedToken = utf8.decode(
             list,
             allowMalformed: false,
           );
-          aiCompleteOutput += decodedToken;
+
+          // Keep track of the conversation that is generated by the AI model.
+          conversation += decodedToken;
 
           // Send the last token of the response back to the main isolate.
           yield decodedToken;
         } catch (_) {
-          debugPrint("[AubAi]: Error decoding token: $id");
+          debugPrint("[AUB.AI]: Error decoding token: $id");
         }
 
         if (n <= size) {
@@ -273,32 +321,18 @@ Stream<String> _generateResponse({
             truncated[i] = buffer[i];
           }
           calloc.free(buffer);
-
-          // Detect if AI has mentioned the start tag.
-          const String startTag = "<|im_start|>assistant";
-          const String endTag = "<|im_end|>";
-          aiStartEosDetected = aiCompleteOutput.contains(startTag);
-
-          if (aiStartEosDetected == true && aiStopEosDetected == false) {
-            final String aiOutput = aiCompleteOutput.split(startTag).last;
-            aiStopEosDetected = aiOutput.contains(endTag);
-          }
         }
       }
     }
 
     // Conditions to break out of the loop and end the conversation.
-    if (embd.isNotEmpty && embd.last == llamaCpp.llama_token_eos(model)) {
-      break;
-    } else if (aiStopEosDetected) {
-      aiCompleteOutput = '';
-      debugPrint("[AubAi]: End of AI response detected.");
+    if (embd.isNotEmpty && embd.last == llamaCpp.llama_token_eos(llamaModel)) {
       break;
     }
   }
 
   // Freeing the pointers after using them
-  llamaCpp.llama_free(ctx);
+  llamaCpp.llama_free(llamaCtxPtr);
 
   // AI has finished generating the response, so we return this
   // special string to indicate that to the completer.
@@ -380,7 +414,7 @@ final DynamicLibrary _dylib = () {
 final AubAiBindings _bindings = AubAiBindings(_dylib);
 
 // Expose _bindings publicly:
-get aubAiBindings => _bindings;
+AubAiBindings get aubAiBindings => _bindings;
 
 /// This class is the input that will be processed by the AI model.
 /// Basically the prompt that the user wants to generate a response from.
@@ -389,7 +423,6 @@ class _PromptBatchInput {
   final int id;
   final String filePathToModel;
   final PromptTemplate promptTemplate;
-  // final dynamic onTokenGenerated;
 
   const _PromptBatchInput(
     this.id,

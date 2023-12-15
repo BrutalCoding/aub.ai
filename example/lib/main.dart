@@ -1,7 +1,7 @@
 import 'dart:io';
 
 import 'package:aub_ai/aub_ai.dart';
-import 'package:aub_ai/prompt_template.dart';
+import 'package:aub_ai/data/prompt_template.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 
@@ -27,28 +27,21 @@ class _MyAppState extends State<MyApp> {
   /// the prompt to the AI.
   final TextEditingController textControllerUserPrompt =
       TextEditingController();
+  final TextEditingController textControllerFullConversation =
+      TextEditingController();
 
   /// This text is used to show the response from the AI in the UI.
-  String responseFromAi = '';
   TalkAsyncState talkAsyncState = TalkAsyncState.idle;
 
+  /// This file is used to store the path to the model file.
   File? file;
 
-  // Define ChatML as the default prompt template
-  PromptTemplate promptTemplate = PromptTemplate.chatML().copyWith(
-    contextSize: 2048,
-  );
+  /// Define ChatML as the default prompt template
+  PromptTemplate promptTemplate = PromptTemplate.chatML();
 
-  /// Each PromptTemplate comes with a default prompt.
-  /// While this prompt is not required, it can be used to get started.
-  /// Good practice is to show the user the default prompt to give them an idea.
-  late final String _promptTemplateDefaultPrompt;
-
-  @override
-  void initState() {
-    super.initState();
-    _promptTemplateDefaultPrompt = promptTemplate.prompt;
-  }
+  // This is the example system message that is used in the ChatML template.
+  final String _chatMLTemplateSysExample =
+      "You are a helpful assistant. Be concise and helpful. If you don't know the answer to a question, please don't share false information.";
 
   @override
   Widget build(BuildContext context) {
@@ -68,17 +61,14 @@ class _MyAppState extends State<MyApp> {
                         () {
                           file = null;
                           textControllerUserPrompt.clear();
-                          responseFromAi = '';
-                          promptTemplate = promptTemplate.copyWith(
-                            prompt: '',
-                          );
+                          textControllerFullConversation.clear();
                           talkAsyncState = TalkAsyncState.idle;
                         },
                       );
                     }
                   : null,
-              icon: const Icon(Icons.clear),
-              tooltip: 'Reset',
+              icon: const Icon(Icons.restore_sharp),
+              tooltip: 'Start over',
             ),
           ],
         ),
@@ -164,95 +154,6 @@ class _MyAppState extends State<MyApp> {
                           ),
                         ],
                       ),
-                    Column(
-                      children: [
-                        Padding(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 16,
-                            vertical: 8,
-                          ),
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Expanded(
-                                child: TextField(
-                                  controller: textControllerUserPrompt,
-                                  textCapitalization:
-                                      TextCapitalization.sentences,
-                                  onSubmitted: (_) => _sendPromptToAi(),
-                                  enabled: file != null &&
-                                      talkAsyncState == TalkAsyncState.idle,
-                                  decoration: InputDecoration(
-                                    border: const OutlineInputBorder(),
-                                    labelText:
-                                        'Example: "$_promptTemplateDefaultPrompt"',
-                                  ),
-                                ),
-                              ),
-                              Flexible(
-                                child: Padding(
-                                  padding: const EdgeInsets.all(8.0),
-                                  child: Stack(
-                                    children: [
-                                      Tooltip(
-                                        // When the AI is busy, the tooltip will
-                                        // show the reason why the button is disabled
-                                        waitDuration:
-                                            const Duration(seconds: 1),
-                                        message: talkAsyncState ==
-                                                    TalkAsyncState.thinking ||
-                                                talkAsyncState ==
-                                                    TalkAsyncState.talking
-                                            ? 'The AI is busy, please wait...'
-                                            : 'Send this prompt to the AI in order to get a response',
-                                        child: ElevatedButton.icon(
-                                          style: ElevatedButton.styleFrom(
-                                            shape: const RoundedRectangleBorder(
-                                              borderRadius: BorderRadius.all(
-                                                Radius.circular(8),
-                                              ),
-                                            ),
-                                            minimumSize: const Size(0, 64),
-                                          ),
-                                          onPressed: file != null &&
-                                                  talkAsyncState ==
-                                                      TalkAsyncState.idle
-                                              ? () => _sendPromptToAi()
-                                              : null,
-                                          icon: const Icon(Icons.send),
-                                          label: const Text('Send'),
-                                        ),
-                                      ),
-
-                                      // Show a progress indicator when the AI is thinking
-                                      if (talkAsyncState ==
-                                              TalkAsyncState.thinking ||
-                                          talkAsyncState ==
-                                              TalkAsyncState.talking)
-                                        const Positioned.fill(
-                                          child: Align(
-                                            alignment: Alignment.bottomCenter,
-                                            child: Padding(
-                                              padding: EdgeInsets.symmetric(
-                                                horizontal: 4,
-                                              ),
-                                              child: LinearProgressIndicator(
-                                                borderRadius: BorderRadius.all(
-                                                  Radius.circular(16),
-                                                ),
-                                              ),
-                                            ),
-                                          ),
-                                        ),
-                                    ],
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ],
-                    ),
                     Center(
                       child: Container(
                         padding: const EdgeInsets.all(8),
@@ -264,15 +165,14 @@ class _MyAppState extends State<MyApp> {
                               children: [
                                 // Show output from AI in a TextField
                                 if (talkAsyncState == TalkAsyncState.talking ||
-                                    responseFromAi.isNotEmpty) ...[
+                                    textControllerFullConversation
+                                        .text.isNotEmpty) ...[
                                   Padding(
                                     padding: const EdgeInsets.all(8.0),
                                     child: TextField(
-                                      controller: TextEditingController(
-                                        text: responseFromAi,
-                                      ),
-                                      maxLines: 20,
-                                      readOnly: true,
+                                      controller:
+                                          textControllerFullConversation,
+                                      maxLines: 10,
                                       decoration: const InputDecoration(
                                         border: OutlineInputBorder(),
                                       ),
@@ -280,8 +180,8 @@ class _MyAppState extends State<MyApp> {
                                   ),
                                 ],
                                 if (talkAsyncState == TalkAsyncState.thinking &&
-                                    responseFromAi.isEmpty)
-                                  Center(
+                                    textControllerFullConversation.text.isEmpty)
+                                  const Center(
                                     child: Column(
                                       mainAxisAlignment:
                                           MainAxisAlignment.center,
@@ -289,15 +189,6 @@ class _MyAppState extends State<MyApp> {
                                       children: [
                                         // Prompt that was sent to the AI
                                         Text(
-                                          '"${promptTemplate.prompt}"',
-                                          textAlign: TextAlign.center,
-                                          style: const TextStyle(
-                                            fontSize: 16,
-                                            fontWeight: FontWeight.bold,
-                                          ),
-                                        ),
-                                        const SizedBox(height: 32),
-                                        const Text(
                                           "Thinking...",
                                           textAlign: TextAlign.center,
                                           style: TextStyle(
@@ -305,14 +196,110 @@ class _MyAppState extends State<MyApp> {
                                             fontWeight: FontWeight.bold,
                                           ),
                                         ),
-                                        const SizedBox(height: 32),
-                                        const CircularProgressIndicator
-                                            .adaptive(),
+                                        SizedBox(height: 32),
+                                        CircularProgressIndicator.adaptive(),
                                       ],
                                     ),
                                   ),
                               ],
                             )),
+                            Padding(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 16,
+                                vertical: 8,
+                              ),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Expanded(
+                                    child: TextField(
+                                      controller: textControllerUserPrompt,
+                                      textCapitalization:
+                                          TextCapitalization.sentences,
+                                      onSubmitted: (_) => _sendPromptToAi(
+                                        textControllerUserPrompt.text,
+                                      ),
+                                      enabled: file != null &&
+                                          talkAsyncState == TalkAsyncState.idle,
+                                      decoration: const InputDecoration(
+                                        border: OutlineInputBorder(),
+
+                                        // Display a hint text when the conversation has not started yet.
+                                        hintText: 'Write something...',
+                                      ),
+                                    ),
+                                  ),
+                                  Flexible(
+                                    child: Padding(
+                                      padding: const EdgeInsets.all(8.0),
+                                      child: Stack(
+                                        children: [
+                                          Tooltip(
+                                            // When the AI is busy, the tooltip will
+                                            // show the reason why the button is disabled
+                                            waitDuration:
+                                                const Duration(seconds: 1),
+                                            message: talkAsyncState ==
+                                                        TalkAsyncState
+                                                            .thinking ||
+                                                    talkAsyncState ==
+                                                        TalkAsyncState.talking
+                                                ? 'The AI is busy, please wait...'
+                                                : 'Send this prompt to the AI in order to get a response',
+                                            child: ElevatedButton.icon(
+                                              style: ElevatedButton.styleFrom(
+                                                shape:
+                                                    const RoundedRectangleBorder(
+                                                  borderRadius:
+                                                      BorderRadius.all(
+                                                    Radius.circular(8),
+                                                  ),
+                                                ),
+                                                minimumSize: const Size(0, 64),
+                                              ),
+                                              onPressed: file != null &&
+                                                      talkAsyncState ==
+                                                          TalkAsyncState.idle
+                                                  ? () => _sendPromptToAi(
+                                                        textControllerUserPrompt
+                                                            .text,
+                                                      )
+                                                  : null,
+                                              icon: const Icon(Icons.send),
+                                              label: const Text('Send'),
+                                            ),
+                                          ),
+
+                                          // Show a progress indicator when the AI is thinking
+                                          if (talkAsyncState ==
+                                                  TalkAsyncState.thinking ||
+                                              talkAsyncState ==
+                                                  TalkAsyncState.talking)
+                                            const Positioned.fill(
+                                              child: Align(
+                                                alignment:
+                                                    Alignment.bottomCenter,
+                                                child: Padding(
+                                                  padding: EdgeInsets.symmetric(
+                                                    horizontal: 4,
+                                                  ),
+                                                  child:
+                                                      LinearProgressIndicator(
+                                                    borderRadius:
+                                                        BorderRadius.all(
+                                                      Radius.circular(16),
+                                                    ),
+                                                  ),
+                                                ),
+                                              ),
+                                            ),
+                                        ],
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
                           ],
                         ),
                       ),
@@ -327,47 +314,79 @@ class _MyAppState extends State<MyApp> {
     );
   }
 
-  void _sendPromptToAi() async {
-    if (file == null || textControllerUserPrompt.text.isEmpty) {
+  /// This function sends the prompt to the AI. It is called when the user
+  /// presses the send button or when the user presses enter on the keyboard.
+  Future<void> _sendPromptToAi(String userPrompt) async {
+    if (file == null || userPrompt.isEmpty) {
       return;
     }
 
-    // Set the prompt to the text in the text field
-    promptTemplate = PromptTemplate.chatML().copyWith(
-      prompt: textControllerUserPrompt.text.trim(),
-    );
+    // Create a temporary prompt template because we're going to modify it
+    // based on whether it's an ongoing conversation or not.
+    PromptTemplate? tmpPromptTemplate;
+    final bool isOngoingConvo = textControllerFullConversation.text
+        .replaceAll(userPrompt, '')
+        .isNotEmpty;
 
-    // Clear the response from the AI
+    if (isOngoingConvo) {
+      // If it's an ongoing conversation, we need to keep the previous
+      // conversation in the prompt template and append the user prompt
+      // to the end of the prompt template in it's expected format (ChatML in this case).
+      tmpPromptTemplate = PromptTemplate(
+        label: 'ChatML',
+        template:
+            "${textControllerFullConversation.text}<|im_start|>user\n${textControllerUserPrompt.text}<|im_end|>\n<|im_start|>assistant",
+        contextSize: 4096,
+        randomSeedNumber: 42,
+        eosToken: "<|im_end|>",
+      );
+    } else {
+      // If it's not an ongoing conversation, we can use the default prompt template.
+      // We need to replace the {systemMessage} and {prompt} placeholders, these
+      // values can be found by looking at the ChatML template source code.
+      tmpPromptTemplate = promptTemplate.copyWith(
+        template: promptTemplate.template
+            .replaceAll(
+              '{systemMessage}',
+              _chatMLTemplateSysExample,
+            )
+            .replaceAll(
+              '{prompt}',
+              userPrompt,
+            ),
+      );
+    }
+
+    // Start the AI
     setState(() {
       talkAsyncState = TalkAsyncState.thinking;
-      // Clear the text field
-      textControllerUserPrompt.clear();
     });
 
-    // Debug print the prompt
-    debugPrint('Prompt: ${promptTemplate.prompt}');
-
+    // A temporary variable to store the generated tokens.
+    String tmpGeneratedToken = '';
     await talkAsync(
       filePathToModel: file!.path,
-      promptTemplate: promptTemplate,
+      promptTemplate: tmpPromptTemplate,
       onTokenGenerated: (String token) {
-        if (talkAsyncState == TalkAsyncState.thinking) {
-          // Change the state to talking when the first token is generated
+        tmpGeneratedToken += token;
+        if (tmpGeneratedToken.length >
+            textControllerFullConversation.text.length) {
+          if (talkAsyncState != TalkAsyncState.talking) {
+            setState(() {
+              talkAsyncState = TalkAsyncState.talking;
+            });
+          }
+
           setState(() {
-            talkAsyncState = TalkAsyncState.talking;
-            responseFromAi = '';
+            textControllerFullConversation.text += token;
           });
         }
-
-        // Add the token to the response from the AI
-        setState(() {
-          responseFromAi += token;
-        });
       },
     );
 
     // Change the state back to idle when the AI is done talking
     setState(() {
+      textControllerUserPrompt.clear();
       talkAsyncState = TalkAsyncState.idle;
     });
   }
