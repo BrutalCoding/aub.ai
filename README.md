@@ -191,7 +191,7 @@ A Dutch word that perfectly describes my current situation: unemployed. But usin
 
 Recently, last September, the fintech startup I was working for had to shut down due to the challenging market conditions. While I'm currently looking for a new job, It's not easy to find a company that combines my passion for AI and Flutter.
 
-I've decided to take a leap of faith and work on this project untill I find a new job, or until I run out of money (Jan-Feb 2024). Whichever comes first. Perhaps I'll find a way to make this project sustainable, while keeping it open source. I'm just going with the flow.
+I've decided to take a leap of faith and work on this project until I find a new job, or until I run out of money (Jan-Feb 2024). Whichever comes first. Perhaps I'll find a way to make this project sustainable, while keeping it open source. I'm just going with the flow.
 
 ## Friends of AubAI
 
