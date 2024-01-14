@@ -168,7 +168,7 @@ class AubAiBindings {
   }
 
   late final _llama_max_devicesPtr =
-      _lookup<ffi.NativeFunction<ffi.Int Function()>>('llama_max_devices');
+      _lookup<ffi.NativeFunction<ffi.Int32 Function()>>('llama_max_devices');
   late final _llama_max_devices =
       _llama_max_devicesPtr.asFunction<int Function()>();
 
@@ -213,11 +213,25 @@ class AubAiBindings {
     );
   }
 
-  late final _llama_n_ctxPtr =
-      _lookup<ffi.NativeFunction<ffi.Int Function(ffi.Pointer<llama_context>)>>(
-          'llama_n_ctx');
+  late final _llama_n_ctxPtr = _lookup<
+          ffi.NativeFunction<ffi.Uint32 Function(ffi.Pointer<llama_context>)>>(
+      'llama_n_ctx');
   late final _llama_n_ctx =
       _llama_n_ctxPtr.asFunction<int Function(ffi.Pointer<llama_context>)>();
+
+  int llama_n_batch(
+    ffi.Pointer<llama_context> ctx,
+  ) {
+    return _llama_n_batch(
+      ctx,
+    );
+  }
+
+  late final _llama_n_batchPtr = _lookup<
+          ffi.NativeFunction<ffi.Uint32 Function(ffi.Pointer<llama_context>)>>(
+      'llama_n_batch');
+  late final _llama_n_batch =
+      _llama_n_batchPtr.asFunction<int Function(ffi.Pointer<llama_context>)>();
 
   int llama_vocab_type1(
     ffi.Pointer<llama_model> model,
@@ -242,7 +256,7 @@ class AubAiBindings {
   }
 
   late final _llama_n_vocabPtr =
-      _lookup<ffi.NativeFunction<ffi.Int Function(ffi.Pointer<llama_model>)>>(
+      _lookup<ffi.NativeFunction<ffi.Int32 Function(ffi.Pointer<llama_model>)>>(
           'llama_n_vocab');
   late final _llama_n_vocab =
       _llama_n_vocabPtr.asFunction<int Function(ffi.Pointer<llama_model>)>();
@@ -256,7 +270,7 @@ class AubAiBindings {
   }
 
   late final _llama_n_ctx_trainPtr =
-      _lookup<ffi.NativeFunction<ffi.Int Function(ffi.Pointer<llama_model>)>>(
+      _lookup<ffi.NativeFunction<ffi.Int32 Function(ffi.Pointer<llama_model>)>>(
           'llama_n_ctx_train');
   late final _llama_n_ctx_train = _llama_n_ctx_trainPtr
       .asFunction<int Function(ffi.Pointer<llama_model>)>();
@@ -270,7 +284,7 @@ class AubAiBindings {
   }
 
   late final _llama_n_embdPtr =
-      _lookup<ffi.NativeFunction<ffi.Int Function(ffi.Pointer<llama_model>)>>(
+      _lookup<ffi.NativeFunction<ffi.Int32 Function(ffi.Pointer<llama_model>)>>(
           'llama_n_embd');
   late final _llama_n_embd =
       _llama_n_embdPtr.asFunction<int Function(ffi.Pointer<llama_model>)>();
@@ -307,7 +321,7 @@ class AubAiBindings {
 
   late final _llama_model_meta_val_strPtr = _lookup<
       ffi.NativeFunction<
-          ffi.Int Function(ffi.Pointer<llama_model>, ffi.Pointer<ffi.Char>,
+          ffi.Int32 Function(ffi.Pointer<llama_model>, ffi.Pointer<ffi.Char>,
               ffi.Pointer<ffi.Char>, ffi.Size)>>('llama_model_meta_val_str');
   late final _llama_model_meta_val_str =
       _llama_model_meta_val_strPtr.asFunction<
@@ -324,7 +338,7 @@ class AubAiBindings {
   }
 
   late final _llama_model_meta_countPtr =
-      _lookup<ffi.NativeFunction<ffi.Int Function(ffi.Pointer<llama_model>)>>(
+      _lookup<ffi.NativeFunction<ffi.Int32 Function(ffi.Pointer<llama_model>)>>(
           'llama_model_meta_count');
   late final _llama_model_meta_count = _llama_model_meta_countPtr
       .asFunction<int Function(ffi.Pointer<llama_model>)>();
@@ -346,9 +360,9 @@ class AubAiBindings {
 
   late final _llama_model_meta_key_by_indexPtr = _lookup<
       ffi.NativeFunction<
-          ffi.Int Function(
+          ffi.Int32 Function(
               ffi.Pointer<llama_model>,
-              ffi.Int,
+              ffi.Int32,
               ffi.Pointer<ffi.Char>,
               ffi.Size)>>('llama_model_meta_key_by_index');
   late final _llama_model_meta_key_by_index =
@@ -373,9 +387,9 @@ class AubAiBindings {
 
   late final _llama_model_meta_val_str_by_indexPtr = _lookup<
       ffi.NativeFunction<
-          ffi.Int Function(
+          ffi.Int32 Function(
               ffi.Pointer<llama_model>,
-              ffi.Int,
+              ffi.Int32,
               ffi.Pointer<ffi.Char>,
               ffi.Size)>>('llama_model_meta_val_str_by_index');
   late final _llama_model_meta_val_str_by_index =
@@ -398,7 +412,7 @@ class AubAiBindings {
 
   late final _llama_model_descPtr = _lookup<
       ffi.NativeFunction<
-          ffi.Int Function(ffi.Pointer<llama_model>, ffi.Pointer<ffi.Char>,
+          ffi.Int32 Function(ffi.Pointer<llama_model>, ffi.Pointer<ffi.Char>,
               ffi.Size)>>('llama_model_desc');
   late final _llama_model_desc = _llama_model_descPtr.asFunction<
       int Function(ffi.Pointer<llama_model>, ffi.Pointer<ffi.Char>, int)>();
@@ -467,7 +481,7 @@ class AubAiBindings {
 
   late final _llama_model_quantizePtr = _lookup<
           ffi.NativeFunction<
-              ffi.Int Function(ffi.Pointer<ffi.Char>, ffi.Pointer<ffi.Char>,
+              ffi.Uint32 Function(ffi.Pointer<ffi.Char>, ffi.Pointer<ffi.Char>,
                   ffi.Pointer<llama_model_quantize_params>)>>(
       'llama_model_quantize');
   late final _llama_model_quantize = _llama_model_quantizePtr.asFunction<
@@ -498,12 +512,12 @@ class AubAiBindings {
 
   late final _llama_apply_lora_from_filePtr = _lookup<
       ffi.NativeFunction<
-          ffi.Int Function(
+          ffi.Int32 Function(
               ffi.Pointer<llama_context>,
               ffi.Pointer<ffi.Char>,
               ffi.Float,
               ffi.Pointer<ffi.Char>,
-              ffi.Int)>>('llama_apply_lora_from_file');
+              ffi.Int32)>>('llama_apply_lora_from_file');
   late final _llama_apply_lora_from_file =
       _llama_apply_lora_from_filePtr.asFunction<
           int Function(ffi.Pointer<llama_context>, ffi.Pointer<ffi.Char>,
@@ -527,12 +541,12 @@ class AubAiBindings {
 
   late final _llama_model_apply_lora_from_filePtr = _lookup<
       ffi.NativeFunction<
-          ffi.Int Function(
+          ffi.Int32 Function(
               ffi.Pointer<llama_model>,
               ffi.Pointer<ffi.Char>,
               ffi.Float,
               ffi.Pointer<ffi.Char>,
-              ffi.Int)>>('llama_model_apply_lora_from_file');
+              ffi.Int32)>>('llama_model_apply_lora_from_file');
   late final _llama_model_apply_lora_from_file =
       _llama_model_apply_lora_from_filePtr.asFunction<
           int Function(ffi.Pointer<llama_model>, ffi.Pointer<ffi.Char>, double,
@@ -603,9 +617,9 @@ class AubAiBindings {
     );
   }
 
-  late final _llama_get_kv_cache_token_countPtr =
-      _lookup<ffi.NativeFunction<ffi.Int Function(ffi.Pointer<llama_context>)>>(
-          'llama_get_kv_cache_token_count');
+  late final _llama_get_kv_cache_token_countPtr = _lookup<
+          ffi.NativeFunction<ffi.Int32 Function(ffi.Pointer<llama_context>)>>(
+      'llama_get_kv_cache_token_count');
   late final _llama_get_kv_cache_token_count =
       _llama_get_kv_cache_token_countPtr
           .asFunction<int Function(ffi.Pointer<llama_context>)>();
@@ -619,9 +633,9 @@ class AubAiBindings {
     );
   }
 
-  late final _llama_get_kv_cache_used_cellsPtr =
-      _lookup<ffi.NativeFunction<ffi.Int Function(ffi.Pointer<llama_context>)>>(
-          'llama_get_kv_cache_used_cells');
+  late final _llama_get_kv_cache_used_cellsPtr = _lookup<
+          ffi.NativeFunction<ffi.Int32 Function(ffi.Pointer<llama_context>)>>(
+      'llama_get_kv_cache_used_cells');
   late final _llama_get_kv_cache_used_cells = _llama_get_kv_cache_used_cellsPtr
       .asFunction<int Function(ffi.Pointer<llama_context>)>();
 
@@ -737,6 +751,33 @@ class AubAiBindings {
   late final _llama_kv_cache_seq_shift =
       _llama_kv_cache_seq_shiftPtr.asFunction<
           void Function(ffi.Pointer<llama_context>, int, int, int, int)>();
+
+  /// Integer division of the positions by factor of `d > 1`
+  /// If the KV cache is RoPEd, the KV data is updated accordingly
+  /// p0 < 0 : [0,  p1]
+  /// p1 < 0 : [p0, inf)
+  void llama_kv_cache_seq_div(
+    ffi.Pointer<llama_context> ctx,
+    int seq_id,
+    int p0,
+    int p1,
+    int d,
+  ) {
+    return _llama_kv_cache_seq_div(
+      ctx,
+      seq_id,
+      p0,
+      p1,
+      d,
+    );
+  }
+
+  late final _llama_kv_cache_seq_divPtr = _lookup<
+      ffi.NativeFunction<
+          ffi.Void Function(ffi.Pointer<llama_context>, llama_seq_id, llama_pos,
+              llama_pos, ffi.Int)>>('llama_kv_cache_seq_div');
+  late final _llama_kv_cache_seq_div = _llama_kv_cache_seq_divPtr.asFunction<
+      void Function(ffi.Pointer<llama_context>, int, int, int, int)>();
 
   /// Returns the maximum size in bytes of the state (rng, logits, embedding
   /// and kv_cache) - will often be smaller after compacting tokens
@@ -866,7 +907,7 @@ class AubAiBindings {
   late final _llama_evalPtr = _lookup<
       ffi.NativeFunction<
           ffi.Int Function(ffi.Pointer<llama_context>, ffi.Pointer<llama_token>,
-              ffi.Int32, ffi.Int)>>('llama_eval');
+              ffi.Int32, ffi.Int32)>>('llama_eval');
   late final _llama_eval = _llama_evalPtr.asFunction<
       int Function(
           ffi.Pointer<llama_context>, ffi.Pointer<llama_token>, int, int)>();
@@ -890,7 +931,7 @@ class AubAiBindings {
   late final _llama_eval_embdPtr = _lookup<
       ffi.NativeFunction<
           ffi.Int Function(ffi.Pointer<llama_context>, ffi.Pointer<ffi.Float>,
-              ffi.Int32, ffi.Int)>>('llama_eval_embd');
+              ffi.Int32, ffi.Int32)>>('llama_eval_embd');
   late final _llama_eval_embd = _llama_eval_embdPtr.asFunction<
       int Function(
           ffi.Pointer<llama_context>, ffi.Pointer<ffi.Float>, int, int)>();
@@ -976,7 +1017,7 @@ class AubAiBindings {
 
   late final _llama_decodePtr = _lookup<
       ffi.NativeFunction<
-          ffi.Int Function(
+          ffi.Int32 Function(
               ffi.Pointer<llama_context>, llama_batch)>>('llama_decode');
   late final _llama_decode = _llama_decodePtr
       .asFunction<int Function(ffi.Pointer<llama_context>, llama_batch)>();
@@ -1164,7 +1205,7 @@ class AubAiBindings {
   }
 
   late final _llama_add_bos_tokenPtr =
-      _lookup<ffi.NativeFunction<ffi.Int Function(ffi.Pointer<llama_model>)>>(
+      _lookup<ffi.NativeFunction<ffi.Int32 Function(ffi.Pointer<llama_model>)>>(
           'llama_add_bos_token');
   late final _llama_add_bos_token = _llama_add_bos_tokenPtr
       .asFunction<int Function(ffi.Pointer<llama_model>)>();
@@ -1179,7 +1220,7 @@ class AubAiBindings {
   }
 
   late final _llama_add_eos_tokenPtr =
-      _lookup<ffi.NativeFunction<ffi.Int Function(ffi.Pointer<llama_model>)>>(
+      _lookup<ffi.NativeFunction<ffi.Int32 Function(ffi.Pointer<llama_model>)>>(
           'llama_add_eos_token');
   late final _llama_add_eos_token = _llama_add_eos_tokenPtr
       .asFunction<int Function(ffi.Pointer<llama_model>)>();
@@ -1269,12 +1310,12 @@ class AubAiBindings {
 
   late final _llama_tokenizePtr = _lookup<
       ffi.NativeFunction<
-          ffi.Int Function(
+          ffi.Int32 Function(
               ffi.Pointer<llama_model>,
               ffi.Pointer<ffi.Char>,
-              ffi.Int,
+              ffi.Int32,
               ffi.Pointer<llama_token>,
-              ffi.Int,
+              ffi.Int32,
               ffi.Bool,
               ffi.Bool)>>('llama_tokenize');
   late final _llama_tokenize = _llama_tokenizePtr.asFunction<
@@ -1301,8 +1342,8 @@ class AubAiBindings {
 
   late final _llama_token_to_piecePtr = _lookup<
       ffi.NativeFunction<
-          ffi.Int Function(ffi.Pointer<llama_model>, llama_token,
-              ffi.Pointer<ffi.Char>, ffi.Int)>>('llama_token_to_piece');
+          ffi.Int32 Function(ffi.Pointer<llama_model>, llama_token,
+              ffi.Pointer<ffi.Char>, ffi.Int32)>>('llama_token_to_piece');
   late final _llama_token_to_piece = _llama_token_to_piecePtr.asFunction<
       int Function(
           ffi.Pointer<llama_model>, int, ffi.Pointer<ffi.Char>, int)>();
@@ -1492,7 +1533,7 @@ class AubAiBindings {
           ffi.Void Function(
               ffi.Pointer<llama_context>,
               ffi.Pointer<llama_token_data_array>,
-              ffi.Int,
+              ffi.Int32,
               ffi.Size)>>('llama_sample_top_k');
   late final _llama_sample_top_k = _llama_sample_top_kPtr.asFunction<
       void Function(ffi.Pointer<llama_context>,
@@ -1701,7 +1742,7 @@ class AubAiBindings {
               ffi.Pointer<llama_token_data_array>,
               ffi.Float,
               ffi.Float,
-              ffi.Int,
+              ffi.Int32,
               ffi.Pointer<ffi.Float>)>>('llama_sample_token_mirostat');
   late final _llama_sample_token_mirostat =
       _llama_sample_token_mirostatPtr.asFunction<
@@ -1848,8 +1889,8 @@ class AubAiBindings {
               llama_beam_search_callback_fn_t,
               ffi.Pointer<ffi.Void>,
               ffi.Size,
-              ffi.Int,
-              ffi.Int)>>('llama_beam_search');
+              ffi.Int32,
+              ffi.Int32)>>('llama_beam_search');
   late final _llama_beam_search = _llama_beam_searchPtr.asFunction<
       void Function(ffi.Pointer<llama_context>, llama_beam_search_callback_fn_t,
           ffi.Pointer<ffi.Void>, int, int, int)>();
@@ -2024,6 +2065,15 @@ abstract class llama_ftype {
   /// except 1d tensors
   static const int LLAMA_FTYPE_MOSTLY_Q6_K = 18;
 
+  /// except 1d tensors
+  static const int LLAMA_FTYPE_MOSTLY_IQ2_XXS = 19;
+
+  /// except 1d tensors
+  static const int LLAMA_FTYPE_MOSTLY_IQ2_XS = 20;
+
+  /// except 1d tensors
+  static const int LLAMA_FTYPE_MOSTLY_Q2_K_S = 21;
+
   /// not specified in the model file
   static const int LLAMA_FTYPE_GUESSED = 1024;
 }
@@ -2034,6 +2084,17 @@ abstract class llama_rope_scaling_type {
   static const int LLAMA_ROPE_SCALING_LINEAR = 1;
   static const int LLAMA_ROPE_SCALING_YARN = 2;
   static const int LLAMA_ROPE_SCALING_MAX_VALUE = 2;
+}
+
+abstract class llama_split_mode {
+  /// single GPU
+  static const int LLAMA_SPLIT_NONE = 0;
+
+  /// split layers and KV across GPUs
+  static const int LLAMA_SPLIT_LAYER = 1;
+
+  /// split rows across GPUs
+  static const int LLAMA_SPLIT_ROW = 2;
 }
 
 final class llama_token_data extends ffi.Struct {
@@ -2138,14 +2199,23 @@ final class llama_model_params extends ffi.Struct {
   @ffi.Int32()
   external int n_gpu_layers;
 
-  /// the GPU that is used for scratch and small tensors
+  /// how to split the model across multiple GPUs
+  @ffi.Int32()
+  external int split_mode;
+
+  /// main_gpu interpretation depends on split_mode:
+  /// LLAMA_SPLIT_NONE: the GPU that is used for the entire model
+  /// LLAMA_SPLIT_ROW: the GPU that is used for small tensors and intermediate results
+  /// LLAMA_SPLIT_LAYER: ignored
   @ffi.Int32()
   external int main_gpu;
 
-  /// how to split layers across multiple GPUs (size: LLAMA_MAX_DEVICES)
+  /// proportion of the model (layers or rows) to offload to each GPU, size: LLAMA_MAX_DEVICES
   external ffi.Pointer<ffi.Float> tensor_split;
 
-  /// called with a progress value between 0 and 1, pass NULL to disable
+  /// Called with a progress value between 0.0 and 1.0. Pass NULL to disable.
+  /// If the provided progress_callback returns true, model loading continues.
+  /// If it returns false, model loading is immediately aborted.
   external llama_progress_callback progress_callback;
 
   /// context pointer passed to the progress callback
@@ -2169,9 +2239,9 @@ final class llama_model_params extends ffi.Struct {
 
 typedef llama_progress_callback
     = ffi.Pointer<ffi.NativeFunction<llama_progress_callbackFunction>>;
-typedef llama_progress_callbackFunction = ffi.Void Function(
+typedef llama_progress_callbackFunction = ffi.Bool Function(
     ffi.Float progress, ffi.Pointer<ffi.Void> ctx);
-typedef Dartllama_progress_callbackFunction = void Function(
+typedef Dartllama_progress_callbackFunction = bool Function(
     double progress, ffi.Pointer<ffi.Void> ctx);
 
 final class llama_context_params extends ffi.Struct {
@@ -2272,16 +2342,18 @@ abstract class ggml_type {
   static const int GGML_TYPE_Q5_K = 13;
   static const int GGML_TYPE_Q6_K = 14;
   static const int GGML_TYPE_Q8_K = 15;
-  static const int GGML_TYPE_I8 = 16;
-  static const int GGML_TYPE_I16 = 17;
-  static const int GGML_TYPE_I32 = 18;
-  static const int GGML_TYPE_COUNT = 19;
+  static const int GGML_TYPE_IQ2_XXS = 16;
+  static const int GGML_TYPE_IQ2_XS = 17;
+  static const int GGML_TYPE_I8 = 18;
+  static const int GGML_TYPE_I16 = 19;
+  static const int GGML_TYPE_I32 = 20;
+  static const int GGML_TYPE_COUNT = 21;
 }
 
 /// model quantization parameters
 final class llama_model_quantize_params extends ffi.Struct {
   /// number of threads to use for quantizing, if <=0 will use std::thread::hardware_concurrency()
-  @ffi.Int()
+  @ffi.Int32()
   external int nthread;
 
   /// quantize to this llama_ftype
@@ -2303,6 +2375,9 @@ final class llama_model_quantize_params extends ffi.Struct {
   /// disable k-quant mixtures and quantize all tensors to the same type
   @ffi.Bool()
   external bool pure;
+
+  /// pointer to importance matrix data
+  external ffi.Pointer<ffi.Void> imatrix;
 }
 
 /// grammar types
@@ -2628,6 +2703,7 @@ abstract class ggml_log_level {
   static const int GGML_LOG_LEVEL_ERROR = 2;
   static const int GGML_LOG_LEVEL_WARN = 3;
   static const int GGML_LOG_LEVEL_INFO = 4;
+  static const int GGML_LOG_LEVEL_DEBUG = 5;
 }
 
 /// stdio state variables.
@@ -2780,8 +2856,10 @@ const int LLAMA_DEFAULT_SEED = 4294967295;
 
 const int LLAMA_MAX_RNG_STATE = 65536;
 
+const int LLAMA_FILE_MAGIC_GGLA = 1734831201;
+
 const int LLAMA_FILE_MAGIC_GGSN = 1734833006;
 
 const int LLAMA_SESSION_MAGIC = 1734833006;
 
-const int LLAMA_SESSION_VERSION = 3;
+const int LLAMA_SESSION_VERSION = 4;

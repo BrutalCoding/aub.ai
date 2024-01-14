@@ -65,6 +65,8 @@ ffi.Pointer<ffi.Int32> allocateIntArray(List<int> list) {
   return pointer;
 }
 
+Pointer<llama_context>? llamaCtxPtr;
+
 /// Invoke the AI model to generate a response from given [instruction].
 /// Returns the response as a [String].
 ///
@@ -115,6 +117,8 @@ Stream<String> _generateResponse({
       promptTemplate.contextSize ?? llamaCtxDefaultParams.n_ctx;
   llamaCtxParamsPtr.ref.seed =
       promptTemplate.randomSeedNumber ?? llamaCtxDefaultParams.seed;
+  llamaCtxParamsPtr.ref.n_threads_batch =
+      promptTemplate.cpuThreadsToUse ?? Platform.numberOfProcessors;
 
   // Dart gives us the number of total threads which is what we want.
   // For example, on a Apple MBP with M1 Pro, this will return 10 cores that
@@ -130,7 +134,7 @@ Stream<String> _generateResponse({
   debugPrint(
       "[AUB.AI] Updated n_threads from: ${llamaCtxDefaultParams.n_threads} (default) -> ${llamaCtxParamsPtr.ref.n_threads} (new)");
 
-  final Pointer<llama_context> llamaCtxPtr =
+  llamaCtxPtr ??=
       llamaCpp.llama_new_context_with_model(llamaModel, llamaCtxParamsPtr.ref);
   debugPrint('[AUB.AI] llama_new_context_with_model(...)');
 
@@ -138,7 +142,7 @@ Stream<String> _generateResponse({
   final List<int> tmp = [0, 1, 2, 3];
   final Pointer<Int32> tmpPointer = allocateIntArray(tmp); //correct
 
-  llamaCpp.llama_eval(llamaCtxPtr, tmpPointer, tmp.length, 0);
+  llamaCpp.llama_eval(llamaCtxPtr!, tmpPointer, tmp.length, 0);
   llamaCpp.llama_add_eos_token(llamaModel);
 
   int nPast = 0;
@@ -162,7 +166,7 @@ Stream<String> _generateResponse({
   );
 
   tokens = truncateMemory(tokens, nOfTok, nOfTok);
-  final nCtx = llamaCpp.llama_n_ctx(llamaCtxPtr);
+  final nCtx = llamaCpp.llama_n_ctx(llamaCtxPtr!);
 
   int nPredict = llamaCtxParamsPtr.ref.n_ctx;
   nPredict = min(nPredict, nCtx - nOfTok);
@@ -222,7 +226,7 @@ Stream<String> _generateResponse({
 
     if (embd.isNotEmpty) {
       final Pointer<Int32> embdPointer = allocateIntArray(embd);
-      llamaCpp.llama_eval(llamaCtxPtr, embdPointer, embd.length, nPast);
+      llamaCpp.llama_eval(llamaCtxPtr!, embdPointer, embd.length, nPast);
       calloc.free(embdPointer); // Freeing the pointer after using it
     }
 
@@ -230,7 +234,7 @@ Stream<String> _generateResponse({
     embd.clear();
 
     if (nOfTok <= inputConsumed) {
-      final Pointer<Float> logits = llamaCpp.llama_get_logits(llamaCtxPtr);
+      final Pointer<Float> logits = llamaCpp.llama_get_logits(llamaCtxPtr!);
       final int nVocab = llamaCpp.llama_n_vocab(llamaModel);
       final Pointer<llama_token_data> arr = calloc<llama_token_data>(nVocab);
 
@@ -247,7 +251,7 @@ Stream<String> _generateResponse({
 
       final allocatedArray = allocateIntArray(lastNTokensData);
       llamaCpp.llama_sample_repetition_penalties(
-        llamaCtxPtr,
+        llamaCtxPtr!,
         candidatesP,
         allocatedArray,
         lastNRepeat,
@@ -256,14 +260,14 @@ Stream<String> _generateResponse({
         presencePenalty,
       );
 
-      llamaCpp.llama_sample_top_k(llamaCtxPtr, candidatesP, 40, 1);
-      llamaCpp.llama_sample_top_p(llamaCtxPtr, candidatesP, 0.8, 1);
+      llamaCpp.llama_sample_top_k(llamaCtxPtr!, candidatesP, 40, 1);
+      llamaCpp.llama_sample_top_p(llamaCtxPtr!, candidatesP, 0.8, 1);
       llamaCpp.llama_sample_temperature(
-        llamaCtxPtr,
+        llamaCtxPtr!,
         candidatesP,
         promptTemplate.temperature ?? 0.4,
       );
-      final int id = llamaCpp.llama_sample_token(llamaCtxPtr, candidatesP);
+      final int id = llamaCpp.llama_sample_token(llamaCtxPtr!, candidatesP);
 
       lastNTokensData = [...lastNTokensData.sublist(1), id];
 
@@ -332,7 +336,7 @@ Stream<String> _generateResponse({
   }
 
   // Freeing the pointers after using them
-  llamaCpp.llama_free(llamaCtxPtr);
+  // llamaCpp.llama_free(llamaCtxPtr);
 
   // AI has finished generating the response, so we return this
   // special string to indicate that to the completer.
