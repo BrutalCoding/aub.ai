@@ -29,10 +29,10 @@ AubAI is not only powerful and versatile but also user-friendly and open-source.
 
 - **Universal Platform Support**: AubAI is meticulously designed for Flutter, ensuring seamless operation across a multitude of platforms. This broad compatibility extends to various operating systems, catering to a diverse range of development needs:
 
-  - macOS (ARM64 & x86_64)
+  - macOS (ARM64, x86_64)
   - Windows (x86_64)
   - Linux (x86_64)
-  - Android (ARM64)
+  - Android (ARM64, x86_64)
   - iOS (ARM64)
   - iPadOS (ARM64)
 
