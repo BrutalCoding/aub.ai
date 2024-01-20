@@ -1462,9 +1462,35 @@ class AubAiBindings {
               double)>();
 
   /// @details Apply classifier-free guidance to the logits as described in academic paper "Stay on topic with Classifier-Free Guidance" https://arxiv.org/abs/2306.17806
-  /// @param candidates A vector of `llama_token_data` containing the candidate tokens, the logits must be directly extracted from the original generation context without being sorted.
-  /// @params guidance_ctx A separate context from the same model. Other than a negative prompt at the beginning, it should have all generated and user input tokens copied from the main context.
-  /// @params scale Guidance strength. 1.0f means no guidance. Higher values mean stronger guidance.
+  /// @param logits Logits extracted from the original generation context.
+  /// @param logits_guidance Logits extracted from a separate context from the same model. Other than a negative prompt at the beginning, it should have all generated and user input tokens copied from the main context.
+  /// @param scale Guidance strength. 1.0f means no guidance. Higher values mean stronger guidance.
+  void llama_sample_apply_guidance(
+    ffi.Pointer<llama_context> ctx,
+    ffi.Pointer<ffi.Float> logits,
+    ffi.Pointer<ffi.Float> logits_guidance,
+    double scale,
+  ) {
+    return _llama_sample_apply_guidance(
+      ctx,
+      logits,
+      logits_guidance,
+      scale,
+    );
+  }
+
+  late final _llama_sample_apply_guidancePtr = _lookup<
+      ffi.NativeFunction<
+          ffi.Void Function(
+              ffi.Pointer<llama_context>,
+              ffi.Pointer<ffi.Float>,
+              ffi.Pointer<ffi.Float>,
+              ffi.Float)>>('llama_sample_apply_guidance');
+  late final _llama_sample_apply_guidance =
+      _llama_sample_apply_guidancePtr.asFunction<
+          void Function(ffi.Pointer<llama_context>, ffi.Pointer<ffi.Float>,
+              ffi.Pointer<ffi.Float>, double)>();
+
   void llama_sample_classifier_free_guidance(
     ffi.Pointer<llama_context> ctx,
     ffi.Pointer<llama_token_data_array> candidates,
@@ -2297,6 +2323,10 @@ final class llama_context_params extends ffi.Struct {
   @ffi.Uint32()
   external int yarn_orig_ctx;
 
+  external ggml_backend_sched_eval_callback cb_eval;
+
+  external ffi.Pointer<ffi.Void> cb_eval_user_data;
+
   /// data type for K cache
   @ffi.Int32()
   external int type_k;
@@ -2320,6 +2350,82 @@ final class llama_context_params extends ffi.Struct {
   /// whether to offload the KQV ops (including the KV cache) to GPU
   @ffi.Bool()
   external bool offload_kqv;
+}
+
+/// when ask == true, the scheduler wants to know if the user wants to observe this node
+/// this allows the scheduler to batch nodes together in order to evaluate them in a single call
+///
+/// when ask == false, the scheduler is passing the node tensor to the user for observation
+/// if the user returns false, the scheduler will cancel the graph compute
+typedef ggml_backend_sched_eval_callback
+    = ffi.Pointer<ffi.NativeFunction<ggml_backend_sched_eval_callbackFunction>>;
+typedef ggml_backend_sched_eval_callbackFunction = ffi.Bool Function(
+    ffi.Pointer<ggml_tensor> t, ffi.Bool ask, ffi.Pointer<ffi.Void> user_data);
+typedef Dartggml_backend_sched_eval_callbackFunction = bool Function(
+    ffi.Pointer<ggml_tensor> t, bool ask, ffi.Pointer<ffi.Void> user_data);
+
+/// n-dimensional tensor
+final class ggml_tensor extends ffi.Struct {
+  @ffi.Int32()
+  external int type;
+
+  @ffi.Int32()
+  external int backend;
+
+  external ffi.Pointer<ggml_backend_buffer> buffer;
+
+  /// number of elements
+  @ffi.Array.multi([4])
+  external ffi.Array<ffi.Int64> ne;
+
+  /// stride in bytes:
+  /// nb[0] = ggml_type_size(type)
+  /// nb[1] = nb[0]   * (ne[0] / ggml_blck_size(type)) + padding
+  /// nb[i] = nb[i-1] * ne[i-1]
+  @ffi.Array.multi([4])
+  external ffi.Array<ffi.Size> nb;
+
+  /// compute data
+  @ffi.Int32()
+  external int op;
+
+  /// op params - allocated as int32_t for alignment
+  @ffi.Array.multi([16])
+  external ffi.Array<ffi.Int32> op_params;
+
+  @ffi.Bool()
+  external bool is_param;
+
+  external ffi.Pointer<ggml_tensor> grad;
+
+  @ffi.Array.multi([10])
+  external ffi.Array<ffi.Pointer<ggml_tensor>> src;
+
+  /// performance
+  @ffi.Int()
+  external int perf_runs;
+
+  @ffi.Int64()
+  external int perf_cycles;
+
+  @ffi.Int64()
+  external int perf_time_us;
+
+  external ffi.Pointer<ggml_tensor> view_src;
+
+  @ffi.Size()
+  external int view_offs;
+
+  external ffi.Pointer<ffi.Void> data;
+
+  @ffi.Array.multi([64])
+  external ffi.Array<ffi.Char> name;
+
+  /// extra things e.g. for ggml-cuda.cu
+  external ffi.Pointer<ffi.Void> extra;
+
+  @ffi.Array.multi([8])
+  external ffi.Array<ffi.Char> padding;
 }
 
 abstract class ggml_type {
@@ -2348,6 +2454,95 @@ abstract class ggml_type {
   static const int GGML_TYPE_I16 = 19;
   static const int GGML_TYPE_I32 = 20;
   static const int GGML_TYPE_COUNT = 21;
+}
+
+abstract class ggml_backend_type {
+  static const int GGML_BACKEND_CPU = 0;
+  static const int GGML_BACKEND_GPU = 10;
+  static const int GGML_BACKEND_GPU_SPLIT = 20;
+}
+
+final class ggml_backend_buffer extends ffi.Opaque {}
+
+/// available tensor operations:
+abstract class ggml_op {
+  static const int GGML_OP_NONE = 0;
+  static const int GGML_OP_DUP = 1;
+  static const int GGML_OP_ADD = 2;
+  static const int GGML_OP_ADD1 = 3;
+  static const int GGML_OP_ACC = 4;
+  static const int GGML_OP_SUB = 5;
+  static const int GGML_OP_MUL = 6;
+  static const int GGML_OP_DIV = 7;
+  static const int GGML_OP_SQR = 8;
+  static const int GGML_OP_SQRT = 9;
+  static const int GGML_OP_LOG = 10;
+  static const int GGML_OP_SUM = 11;
+  static const int GGML_OP_SUM_ROWS = 12;
+  static const int GGML_OP_MEAN = 13;
+  static const int GGML_OP_ARGMAX = 14;
+  static const int GGML_OP_REPEAT = 15;
+  static const int GGML_OP_REPEAT_BACK = 16;
+  static const int GGML_OP_CONCAT = 17;
+  static const int GGML_OP_SILU_BACK = 18;
+
+  /// normalize
+  static const int GGML_OP_NORM = 19;
+  static const int GGML_OP_RMS_NORM = 20;
+  static const int GGML_OP_RMS_NORM_BACK = 21;
+  static const int GGML_OP_GROUP_NORM = 22;
+  static const int GGML_OP_MUL_MAT = 23;
+  static const int GGML_OP_MUL_MAT_ID = 24;
+  static const int GGML_OP_OUT_PROD = 25;
+  static const int GGML_OP_SCALE = 26;
+  static const int GGML_OP_SET = 27;
+  static const int GGML_OP_CPY = 28;
+  static const int GGML_OP_CONT = 29;
+  static const int GGML_OP_RESHAPE = 30;
+  static const int GGML_OP_VIEW = 31;
+  static const int GGML_OP_PERMUTE = 32;
+  static const int GGML_OP_TRANSPOSE = 33;
+  static const int GGML_OP_GET_ROWS = 34;
+  static const int GGML_OP_GET_ROWS_BACK = 35;
+  static const int GGML_OP_DIAG = 36;
+  static const int GGML_OP_DIAG_MASK_INF = 37;
+  static const int GGML_OP_DIAG_MASK_ZERO = 38;
+  static const int GGML_OP_SOFT_MAX = 39;
+  static const int GGML_OP_SOFT_MAX_BACK = 40;
+  static const int GGML_OP_ROPE = 41;
+  static const int GGML_OP_ROPE_BACK = 42;
+  static const int GGML_OP_ALIBI = 43;
+  static const int GGML_OP_CLAMP = 44;
+  static const int GGML_OP_CONV_TRANSPOSE_1D = 45;
+  static const int GGML_OP_IM2COL = 46;
+  static const int GGML_OP_CONV_TRANSPOSE_2D = 47;
+  static const int GGML_OP_POOL_1D = 48;
+  static const int GGML_OP_POOL_2D = 49;
+
+  /// nearest interpolate
+  static const int GGML_OP_UPSCALE = 50;
+  static const int GGML_OP_PAD = 51;
+  static const int GGML_OP_ARGSORT = 52;
+  static const int GGML_OP_LEAKY_RELU = 53;
+  static const int GGML_OP_FLASH_ATTN = 54;
+  static const int GGML_OP_FLASH_FF = 55;
+  static const int GGML_OP_FLASH_ATTN_BACK = 56;
+  static const int GGML_OP_WIN_PART = 57;
+  static const int GGML_OP_WIN_UNPART = 58;
+  static const int GGML_OP_GET_REL_POS = 59;
+  static const int GGML_OP_ADD_REL_POS = 60;
+  static const int GGML_OP_UNARY = 61;
+  static const int GGML_OP_MAP_UNARY = 62;
+  static const int GGML_OP_MAP_BINARY = 63;
+  static const int GGML_OP_MAP_CUSTOM1_F32 = 64;
+  static const int GGML_OP_MAP_CUSTOM2_F32 = 65;
+  static const int GGML_OP_MAP_CUSTOM3_F32 = 66;
+  static const int GGML_OP_MAP_CUSTOM1 = 67;
+  static const int GGML_OP_MAP_CUSTOM2 = 68;
+  static const int GGML_OP_MAP_CUSTOM3 = 69;
+  static const int GGML_OP_CROSS_ENTROPY_LOSS = 70;
+  static const int GGML_OP_CROSS_ENTROPY_LOSS_BACK = 71;
+  static const int GGML_OP_COUNT = 72;
 }
 
 /// model quantization parameters
@@ -2446,159 +2641,6 @@ final class llama_timings extends ffi.Struct {
 
   @ffi.Int32()
   external int n_eval;
-}
-
-/// n-dimensional tensor
-final class ggml_tensor extends ffi.Struct {
-  @ffi.Int32()
-  external int type;
-
-  @ffi.Int32()
-  external int backend;
-
-  external ffi.Pointer<ggml_backend_buffer> buffer;
-
-  /// number of elements
-  @ffi.Array.multi([4])
-  external ffi.Array<ffi.Int64> ne;
-
-  /// stride in bytes:
-  /// nb[0] = ggml_type_size(type)
-  /// nb[1] = nb[0]   * (ne[0] / ggml_blck_size(type)) + padding
-  /// nb[i] = nb[i-1] * ne[i-1]
-  @ffi.Array.multi([4])
-  external ffi.Array<ffi.Size> nb;
-
-  /// compute data
-  @ffi.Int32()
-  external int op;
-
-  /// op params - allocated as int32_t for alignment
-  @ffi.Array.multi([16])
-  external ffi.Array<ffi.Int32> op_params;
-
-  @ffi.Bool()
-  external bool is_param;
-
-  external ffi.Pointer<ggml_tensor> grad;
-
-  @ffi.Array.multi([10])
-  external ffi.Array<ffi.Pointer<ggml_tensor>> src;
-
-  /// performance
-  @ffi.Int()
-  external int perf_runs;
-
-  @ffi.Int64()
-  external int perf_cycles;
-
-  @ffi.Int64()
-  external int perf_time_us;
-
-  external ffi.Pointer<ggml_tensor> view_src;
-
-  @ffi.Size()
-  external int view_offs;
-
-  external ffi.Pointer<ffi.Void> data;
-
-  @ffi.Array.multi([64])
-  external ffi.Array<ffi.Char> name;
-
-  /// extra things e.g. for ggml-cuda.cu
-  external ffi.Pointer<ffi.Void> extra;
-
-  @ffi.Array.multi([8])
-  external ffi.Array<ffi.Char> padding;
-}
-
-abstract class ggml_backend_type {
-  static const int GGML_BACKEND_CPU = 0;
-  static const int GGML_BACKEND_GPU = 10;
-  static const int GGML_BACKEND_GPU_SPLIT = 20;
-}
-
-final class ggml_backend_buffer extends ffi.Opaque {}
-
-/// available tensor operations:
-abstract class ggml_op {
-  static const int GGML_OP_NONE = 0;
-  static const int GGML_OP_DUP = 1;
-  static const int GGML_OP_ADD = 2;
-  static const int GGML_OP_ADD1 = 3;
-  static const int GGML_OP_ACC = 4;
-  static const int GGML_OP_SUB = 5;
-  static const int GGML_OP_MUL = 6;
-  static const int GGML_OP_DIV = 7;
-  static const int GGML_OP_SQR = 8;
-  static const int GGML_OP_SQRT = 9;
-  static const int GGML_OP_LOG = 10;
-  static const int GGML_OP_SUM = 11;
-  static const int GGML_OP_SUM_ROWS = 12;
-  static const int GGML_OP_MEAN = 13;
-  static const int GGML_OP_ARGMAX = 14;
-  static const int GGML_OP_REPEAT = 15;
-  static const int GGML_OP_REPEAT_BACK = 16;
-  static const int GGML_OP_CONCAT = 17;
-  static const int GGML_OP_SILU_BACK = 18;
-
-  /// normalize
-  static const int GGML_OP_NORM = 19;
-  static const int GGML_OP_RMS_NORM = 20;
-  static const int GGML_OP_RMS_NORM_BACK = 21;
-  static const int GGML_OP_GROUP_NORM = 22;
-  static const int GGML_OP_MUL_MAT = 23;
-  static const int GGML_OP_MUL_MAT_ID = 24;
-  static const int GGML_OP_OUT_PROD = 25;
-  static const int GGML_OP_SCALE = 26;
-  static const int GGML_OP_SET = 27;
-  static const int GGML_OP_CPY = 28;
-  static const int GGML_OP_CONT = 29;
-  static const int GGML_OP_RESHAPE = 30;
-  static const int GGML_OP_VIEW = 31;
-  static const int GGML_OP_PERMUTE = 32;
-  static const int GGML_OP_TRANSPOSE = 33;
-  static const int GGML_OP_GET_ROWS = 34;
-  static const int GGML_OP_GET_ROWS_BACK = 35;
-  static const int GGML_OP_DIAG = 36;
-  static const int GGML_OP_DIAG_MASK_INF = 37;
-  static const int GGML_OP_DIAG_MASK_ZERO = 38;
-  static const int GGML_OP_SOFT_MAX = 39;
-  static const int GGML_OP_SOFT_MAX_BACK = 40;
-  static const int GGML_OP_ROPE = 41;
-  static const int GGML_OP_ROPE_BACK = 42;
-  static const int GGML_OP_ALIBI = 43;
-  static const int GGML_OP_CLAMP = 44;
-  static const int GGML_OP_CONV_TRANSPOSE_1D = 45;
-  static const int GGML_OP_IM2COL = 46;
-  static const int GGML_OP_CONV_TRANSPOSE_2D = 47;
-  static const int GGML_OP_POOL_1D = 48;
-  static const int GGML_OP_POOL_2D = 49;
-
-  /// nearest interpolate
-  static const int GGML_OP_UPSCALE = 50;
-  static const int GGML_OP_PAD = 51;
-  static const int GGML_OP_ARGSORT = 52;
-  static const int GGML_OP_LEAKY_RELU = 53;
-  static const int GGML_OP_FLASH_ATTN = 54;
-  static const int GGML_OP_FLASH_FF = 55;
-  static const int GGML_OP_FLASH_ATTN_BACK = 56;
-  static const int GGML_OP_WIN_PART = 57;
-  static const int GGML_OP_WIN_UNPART = 58;
-  static const int GGML_OP_GET_REL_POS = 59;
-  static const int GGML_OP_ADD_REL_POS = 60;
-  static const int GGML_OP_UNARY = 61;
-  static const int GGML_OP_MAP_UNARY = 62;
-  static const int GGML_OP_MAP_BINARY = 63;
-  static const int GGML_OP_MAP_CUSTOM1_F32 = 64;
-  static const int GGML_OP_MAP_CUSTOM2_F32 = 65;
-  static const int GGML_OP_MAP_CUSTOM3_F32 = 66;
-  static const int GGML_OP_MAP_CUSTOM1 = 67;
-  static const int GGML_OP_MAP_CUSTOM2 = 68;
-  static const int GGML_OP_MAP_CUSTOM3 = 69;
-  static const int GGML_OP_CROSS_ENTROPY_LOSS = 70;
-  static const int GGML_OP_CROSS_ENTROPY_LOSS_BACK = 71;
-  static const int GGML_OP_COUNT = 72;
 }
 
 /// Information associated with an individual cell in the KV cache view.
