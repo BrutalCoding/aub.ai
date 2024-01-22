@@ -24,7 +24,8 @@ fi
 
 # Run git submodule update to get the latest version of llama.cpp
 echo "[AUB.AI] Updating git submodules..."
-git submodule update --remote
+git submodule init
+git submodule update
 
 # Flutter related
 flutter clean
