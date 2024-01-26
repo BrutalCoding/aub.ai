@@ -9,9 +9,11 @@ headers:
   entry-points:
     - 'src/aub_ai.h'
     - 'src/llama.cpp/llama.h'
+    - 'src/sherpa-onnx/sherpa-onnx/c-api/c-api.h'
   include-directives:
     - 'src/aub_ai.h'
     - 'src/llama.cpp/llama.h'
+    - 'src/sherpa-onnx/sherpa-onnx/c-api/c-api.h'
 preamble: |
   // ignore_for_file: always_specify_types
   // ignore_for_file: camel_case_types

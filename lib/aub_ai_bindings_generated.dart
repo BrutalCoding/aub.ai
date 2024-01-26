@@ -2012,6 +2012,1128 @@ class AubAiBindings {
   late final _llama_dump_timing_info_yaml =
       _llama_dump_timing_info_yamlPtr.asFunction<
           void Function(ffi.Pointer<FILE>, ffi.Pointer<llama_context>)>();
+
+  /// @param config  Config for the recognizer.
+  /// @return Return a pointer to the recognizer. The user has to invoke
+  /// DestroyOnlineRecognizer() to free it to avoid memory leak.
+  ffi.Pointer<SherpaOnnxOnlineRecognizer> CreateOnlineRecognizer(
+    ffi.Pointer<SherpaOnnxOnlineRecognizerConfig> config,
+  ) {
+    return _CreateOnlineRecognizer(
+      config,
+    );
+  }
+
+  late final _CreateOnlineRecognizerPtr = _lookup<
+          ffi.NativeFunction<
+              ffi.Pointer<SherpaOnnxOnlineRecognizer> Function(
+                  ffi.Pointer<SherpaOnnxOnlineRecognizerConfig>)>>(
+      'CreateOnlineRecognizer');
+  late final _CreateOnlineRecognizer = _CreateOnlineRecognizerPtr.asFunction<
+      ffi.Pointer<SherpaOnnxOnlineRecognizer> Function(
+          ffi.Pointer<SherpaOnnxOnlineRecognizerConfig>)>();
+
+  /// Free a pointer returned by CreateOnlineRecognizer()
+  ///
+  /// @param p A pointer returned by CreateOnlineRecognizer()
+  void DestroyOnlineRecognizer(
+    ffi.Pointer<SherpaOnnxOnlineRecognizer> recognizer,
+  ) {
+    return _DestroyOnlineRecognizer(
+      recognizer,
+    );
+  }
+
+  late final _DestroyOnlineRecognizerPtr = _lookup<
+          ffi.NativeFunction<
+              ffi.Void Function(ffi.Pointer<SherpaOnnxOnlineRecognizer>)>>(
+      'DestroyOnlineRecognizer');
+  late final _DestroyOnlineRecognizer = _DestroyOnlineRecognizerPtr.asFunction<
+      void Function(ffi.Pointer<SherpaOnnxOnlineRecognizer>)>();
+
+  /// Create an online stream for accepting wave samples.
+  ///
+  /// @param recognizer  A pointer returned by CreateOnlineRecognizer()
+  /// @return Return a pointer to an OnlineStream. The user has to invoke
+  /// DestroyOnlineStream() to free it to avoid memory leak.
+  ffi.Pointer<SherpaOnnxOnlineStream> CreateOnlineStream(
+    ffi.Pointer<SherpaOnnxOnlineRecognizer> recognizer,
+  ) {
+    return _CreateOnlineStream(
+      recognizer,
+    );
+  }
+
+  late final _CreateOnlineStreamPtr = _lookup<
+      ffi.NativeFunction<
+          ffi.Pointer<SherpaOnnxOnlineStream> Function(
+              ffi.Pointer<SherpaOnnxOnlineRecognizer>)>>('CreateOnlineStream');
+  late final _CreateOnlineStream = _CreateOnlineStreamPtr.asFunction<
+      ffi.Pointer<SherpaOnnxOnlineStream> Function(
+          ffi.Pointer<SherpaOnnxOnlineRecognizer>)>();
+
+  /// Create an online stream for accepting wave samples with the specified hot
+  /// words.
+  ///
+  /// @param recognizer  A pointer returned by CreateOnlineRecognizer()
+  /// @return Return a pointer to an OnlineStream. The user has to invoke
+  /// DestroyOnlineStream() to free it to avoid memory leak.
+  ffi.Pointer<SherpaOnnxOnlineStream> CreateOnlineStreamWithHotwords(
+    ffi.Pointer<SherpaOnnxOnlineRecognizer> recognizer,
+    ffi.Pointer<ffi.Char> hotwords,
+  ) {
+    return _CreateOnlineStreamWithHotwords(
+      recognizer,
+      hotwords,
+    );
+  }
+
+  late final _CreateOnlineStreamWithHotwordsPtr = _lookup<
+      ffi.NativeFunction<
+          ffi.Pointer<SherpaOnnxOnlineStream> Function(
+              ffi.Pointer<SherpaOnnxOnlineRecognizer>,
+              ffi.Pointer<ffi.Char>)>>('CreateOnlineStreamWithHotwords');
+  late final _CreateOnlineStreamWithHotwords =
+      _CreateOnlineStreamWithHotwordsPtr.asFunction<
+          ffi.Pointer<SherpaOnnxOnlineStream> Function(
+              ffi.Pointer<SherpaOnnxOnlineRecognizer>,
+              ffi.Pointer<ffi.Char>)>();
+
+  /// Destroy an online stream.
+  ///
+  /// @param stream A pointer returned by CreateOnlineStream()
+  void DestroyOnlineStream(
+    ffi.Pointer<SherpaOnnxOnlineStream> stream,
+  ) {
+    return _DestroyOnlineStream(
+      stream,
+    );
+  }
+
+  late final _DestroyOnlineStreamPtr = _lookup<
+      ffi.NativeFunction<
+          ffi.Void Function(
+              ffi.Pointer<SherpaOnnxOnlineStream>)>>('DestroyOnlineStream');
+  late final _DestroyOnlineStream = _DestroyOnlineStreamPtr.asFunction<
+      void Function(ffi.Pointer<SherpaOnnxOnlineStream>)>();
+
+  /// Accept input audio samples and compute the features.
+  /// The user has to invoke DecodeOnlineStream() to run the neural network and
+  /// decoding.
+  ///
+  /// @param stream  A pointer returned by CreateOnlineStream().
+  /// @param sample_rate  Sample rate of the input samples. If it is different
+  /// from config.feat_config.sample_rate, we will do
+  /// resampling inside sherpa-onnx.
+  /// @param samples A pointer to a 1-D array containing audio samples.
+  /// The range of samples has to be normalized to [-1, 1].
+  /// @param n  Number of elements in the samples array.
+  void AcceptWaveform(
+    ffi.Pointer<SherpaOnnxOnlineStream> stream,
+    int sample_rate,
+    ffi.Pointer<ffi.Float> samples,
+    int n,
+  ) {
+    return _AcceptWaveform(
+      stream,
+      sample_rate,
+      samples,
+      n,
+    );
+  }
+
+  late final _AcceptWaveformPtr = _lookup<
+      ffi.NativeFunction<
+          ffi.Void Function(ffi.Pointer<SherpaOnnxOnlineStream>, ffi.Int32,
+              ffi.Pointer<ffi.Float>, ffi.Int32)>>('AcceptWaveform');
+  late final _AcceptWaveform = _AcceptWaveformPtr.asFunction<
+      void Function(ffi.Pointer<SherpaOnnxOnlineStream>, int,
+          ffi.Pointer<ffi.Float>, int)>();
+
+  /// Return 1 if there are enough number of feature frames for decoding.
+  /// Return 0 otherwise.
+  ///
+  /// @param recognizer  A pointer returned by CreateOnlineRecognizer
+  /// @param stream  A pointer returned by CreateOnlineStream
+  int IsOnlineStreamReady(
+    ffi.Pointer<SherpaOnnxOnlineRecognizer> recognizer,
+    ffi.Pointer<SherpaOnnxOnlineStream> stream,
+  ) {
+    return _IsOnlineStreamReady(
+      recognizer,
+      stream,
+    );
+  }
+
+  late final _IsOnlineStreamReadyPtr = _lookup<
+      ffi.NativeFunction<
+          ffi.Int32 Function(ffi.Pointer<SherpaOnnxOnlineRecognizer>,
+              ffi.Pointer<SherpaOnnxOnlineStream>)>>('IsOnlineStreamReady');
+  late final _IsOnlineStreamReady = _IsOnlineStreamReadyPtr.asFunction<
+      int Function(ffi.Pointer<SherpaOnnxOnlineRecognizer>,
+          ffi.Pointer<SherpaOnnxOnlineStream>)>();
+
+  /// Call this function to run the neural network model and decoding.
+  ///
+  /// Precondition for this function: IsOnlineStreamReady() MUST return 1.
+  ///
+  /// Usage example:
+  ///
+  /// while (IsOnlineStreamReady(recognizer, stream)) {
+  /// DecodeOnlineStream(recognizer, stream);
+  /// }
+  void DecodeOnlineStream(
+    ffi.Pointer<SherpaOnnxOnlineRecognizer> recognizer,
+    ffi.Pointer<SherpaOnnxOnlineStream> stream,
+  ) {
+    return _DecodeOnlineStream(
+      recognizer,
+      stream,
+    );
+  }
+
+  late final _DecodeOnlineStreamPtr = _lookup<
+      ffi.NativeFunction<
+          ffi.Void Function(ffi.Pointer<SherpaOnnxOnlineRecognizer>,
+              ffi.Pointer<SherpaOnnxOnlineStream>)>>('DecodeOnlineStream');
+  late final _DecodeOnlineStream = _DecodeOnlineStreamPtr.asFunction<
+      void Function(ffi.Pointer<SherpaOnnxOnlineRecognizer>,
+          ffi.Pointer<SherpaOnnxOnlineStream>)>();
+
+  /// This function is similar to DecodeOnlineStream(). It decodes multiple
+  /// OnlineStream in parallel.
+  ///
+  /// Caution: The caller has to ensure each OnlineStream is ready, i.e.,
+  /// IsOnlineStreamReady() for that stream should return 1.
+  ///
+  /// @param recognizer  A pointer returned by CreateOnlineRecognizer()
+  /// @param streams  A pointer array containing pointers returned by
+  /// CreateOnlineRecognizer()
+  /// @param n  Number of elements in the given streams array.
+  void DecodeMultipleOnlineStreams(
+    ffi.Pointer<SherpaOnnxOnlineRecognizer> recognizer,
+    ffi.Pointer<ffi.Pointer<SherpaOnnxOnlineStream>> streams,
+    int n,
+  ) {
+    return _DecodeMultipleOnlineStreams(
+      recognizer,
+      streams,
+      n,
+    );
+  }
+
+  late final _DecodeMultipleOnlineStreamsPtr = _lookup<
+      ffi.NativeFunction<
+          ffi.Void Function(
+              ffi.Pointer<SherpaOnnxOnlineRecognizer>,
+              ffi.Pointer<ffi.Pointer<SherpaOnnxOnlineStream>>,
+              ffi.Int32)>>('DecodeMultipleOnlineStreams');
+  late final _DecodeMultipleOnlineStreams =
+      _DecodeMultipleOnlineStreamsPtr.asFunction<
+          void Function(ffi.Pointer<SherpaOnnxOnlineRecognizer>,
+              ffi.Pointer<ffi.Pointer<SherpaOnnxOnlineStream>>, int)>();
+
+  /// Get the decoding results so far for an OnlineStream.
+  ///
+  /// @param recognizer A pointer returned by CreateOnlineRecognizer().
+  /// @param stream A pointer returned by CreateOnlineStream().
+  /// @return A pointer containing the result. The user has to invoke
+  /// DestroyOnlineRecognizerResult() to free the returned pointer to
+  /// avoid memory leak.
+  ffi.Pointer<SherpaOnnxOnlineRecognizerResult> GetOnlineStreamResult(
+    ffi.Pointer<SherpaOnnxOnlineRecognizer> recognizer,
+    ffi.Pointer<SherpaOnnxOnlineStream> stream,
+  ) {
+    return _GetOnlineStreamResult(
+      recognizer,
+      stream,
+    );
+  }
+
+  late final _GetOnlineStreamResultPtr = _lookup<
+      ffi.NativeFunction<
+          ffi.Pointer<SherpaOnnxOnlineRecognizerResult> Function(
+              ffi.Pointer<SherpaOnnxOnlineRecognizer>,
+              ffi.Pointer<SherpaOnnxOnlineStream>)>>('GetOnlineStreamResult');
+  late final _GetOnlineStreamResult = _GetOnlineStreamResultPtr.asFunction<
+      ffi.Pointer<SherpaOnnxOnlineRecognizerResult> Function(
+          ffi.Pointer<SherpaOnnxOnlineRecognizer>,
+          ffi.Pointer<SherpaOnnxOnlineStream>)>();
+
+  /// Destroy the pointer returned by GetOnlineStreamResult().
+  ///
+  /// @param r A pointer returned by GetOnlineStreamResult()
+  void DestroyOnlineRecognizerResult(
+    ffi.Pointer<SherpaOnnxOnlineRecognizerResult> r,
+  ) {
+    return _DestroyOnlineRecognizerResult(
+      r,
+    );
+  }
+
+  late final _DestroyOnlineRecognizerResultPtr = _lookup<
+          ffi.NativeFunction<
+              ffi.Void Function(
+                  ffi.Pointer<SherpaOnnxOnlineRecognizerResult>)>>(
+      'DestroyOnlineRecognizerResult');
+  late final _DestroyOnlineRecognizerResult =
+      _DestroyOnlineRecognizerResultPtr.asFunction<
+          void Function(ffi.Pointer<SherpaOnnxOnlineRecognizerResult>)>();
+
+  /// Reset an OnlineStream , which clears the neural network model state
+  /// and the state for decoding.
+  ///
+  /// @param recognizer A pointer returned by CreateOnlineRecognizer().
+  /// @param stream A pointer returned by CreateOnlineStream
+  void Reset(
+    ffi.Pointer<SherpaOnnxOnlineRecognizer> recognizer,
+    ffi.Pointer<SherpaOnnxOnlineStream> stream,
+  ) {
+    return _Reset(
+      recognizer,
+      stream,
+    );
+  }
+
+  late final _ResetPtr = _lookup<
+      ffi.NativeFunction<
+          ffi.Void Function(ffi.Pointer<SherpaOnnxOnlineRecognizer>,
+              ffi.Pointer<SherpaOnnxOnlineStream>)>>('Reset');
+  late final _Reset = _ResetPtr.asFunction<
+      void Function(ffi.Pointer<SherpaOnnxOnlineRecognizer>,
+          ffi.Pointer<SherpaOnnxOnlineStream>)>();
+
+  /// Signal that no more audio samples would be available.
+  /// After this call, you cannot call AcceptWaveform() any more.
+  ///
+  /// @param stream A pointer returned by CreateOnlineStream()
+  void InputFinished(
+    ffi.Pointer<SherpaOnnxOnlineStream> stream,
+  ) {
+    return _InputFinished(
+      stream,
+    );
+  }
+
+  late final _InputFinishedPtr = _lookup<
+      ffi.NativeFunction<
+          ffi.Void Function(
+              ffi.Pointer<SherpaOnnxOnlineStream>)>>('InputFinished');
+  late final _InputFinished = _InputFinishedPtr.asFunction<
+      void Function(ffi.Pointer<SherpaOnnxOnlineStream>)>();
+
+  /// Return 1 if an endpoint has been detected.
+  ///
+  /// @param recognizer A pointer returned by CreateOnlineRecognizer()
+  /// @param stream A pointer returned by CreateOnlineStream()
+  /// @return Return 1 if an endpoint is detected. Return 0 otherwise.
+  int IsEndpoint(
+    ffi.Pointer<SherpaOnnxOnlineRecognizer> recognizer,
+    ffi.Pointer<SherpaOnnxOnlineStream> stream,
+  ) {
+    return _IsEndpoint(
+      recognizer,
+      stream,
+    );
+  }
+
+  late final _IsEndpointPtr = _lookup<
+      ffi.NativeFunction<
+          ffi.Int32 Function(ffi.Pointer<SherpaOnnxOnlineRecognizer>,
+              ffi.Pointer<SherpaOnnxOnlineStream>)>>('IsEndpoint');
+  late final _IsEndpoint = _IsEndpointPtr.asFunction<
+      int Function(ffi.Pointer<SherpaOnnxOnlineRecognizer>,
+          ffi.Pointer<SherpaOnnxOnlineStream>)>();
+
+  /// Create a display object. Must be freed using DestroyDisplay to avoid
+  /// memory leak.
+  ffi.Pointer<SherpaOnnxDisplay> CreateDisplay(
+    int max_word_per_line,
+  ) {
+    return _CreateDisplay(
+      max_word_per_line,
+    );
+  }
+
+  late final _CreateDisplayPtr = _lookup<
+      ffi.NativeFunction<
+          ffi.Pointer<SherpaOnnxDisplay> Function(ffi.Int32)>>('CreateDisplay');
+  late final _CreateDisplay = _CreateDisplayPtr.asFunction<
+      ffi.Pointer<SherpaOnnxDisplay> Function(int)>();
+
+  void DestroyDisplay(
+    ffi.Pointer<SherpaOnnxDisplay> display,
+  ) {
+    return _DestroyDisplay(
+      display,
+    );
+  }
+
+  late final _DestroyDisplayPtr = _lookup<
+      ffi.NativeFunction<
+          ffi.Void Function(ffi.Pointer<SherpaOnnxDisplay>)>>('DestroyDisplay');
+  late final _DestroyDisplay = _DestroyDisplayPtr.asFunction<
+      void Function(ffi.Pointer<SherpaOnnxDisplay>)>();
+
+  /// Print the result.
+  void SherpaOnnxPrint(
+    ffi.Pointer<SherpaOnnxDisplay> display,
+    int idx,
+    ffi.Pointer<ffi.Char> s,
+  ) {
+    return _SherpaOnnxPrint(
+      display,
+      idx,
+      s,
+    );
+  }
+
+  late final _SherpaOnnxPrintPtr = _lookup<
+      ffi.NativeFunction<
+          ffi.Void Function(ffi.Pointer<SherpaOnnxDisplay>, ffi.Int32,
+              ffi.Pointer<ffi.Char>)>>('SherpaOnnxPrint');
+  late final _SherpaOnnxPrint = _SherpaOnnxPrintPtr.asFunction<
+      void Function(
+          ffi.Pointer<SherpaOnnxDisplay>, int, ffi.Pointer<ffi.Char>)>();
+
+  /// @param config  Config for the recognizer.
+  /// @return Return a pointer to the recognizer. The user has to invoke
+  /// DestroyOfflineRecognizer() to free it to avoid memory leak.
+  ffi.Pointer<SherpaOnnxOfflineRecognizer> CreateOfflineRecognizer(
+    ffi.Pointer<SherpaOnnxOfflineRecognizerConfig> config,
+  ) {
+    return _CreateOfflineRecognizer(
+      config,
+    );
+  }
+
+  late final _CreateOfflineRecognizerPtr = _lookup<
+          ffi.NativeFunction<
+              ffi.Pointer<SherpaOnnxOfflineRecognizer> Function(
+                  ffi.Pointer<SherpaOnnxOfflineRecognizerConfig>)>>(
+      'CreateOfflineRecognizer');
+  late final _CreateOfflineRecognizer = _CreateOfflineRecognizerPtr.asFunction<
+      ffi.Pointer<SherpaOnnxOfflineRecognizer> Function(
+          ffi.Pointer<SherpaOnnxOfflineRecognizerConfig>)>();
+
+  /// Free a pointer returned by CreateOfflineRecognizer()
+  ///
+  /// @param p A pointer returned by CreateOfflineRecognizer()
+  void DestroyOfflineRecognizer(
+    ffi.Pointer<SherpaOnnxOfflineRecognizer> recognizer,
+  ) {
+    return _DestroyOfflineRecognizer(
+      recognizer,
+    );
+  }
+
+  late final _DestroyOfflineRecognizerPtr = _lookup<
+          ffi.NativeFunction<
+              ffi.Void Function(ffi.Pointer<SherpaOnnxOfflineRecognizer>)>>(
+      'DestroyOfflineRecognizer');
+  late final _DestroyOfflineRecognizer = _DestroyOfflineRecognizerPtr
+      .asFunction<void Function(ffi.Pointer<SherpaOnnxOfflineRecognizer>)>();
+
+  /// Create an offline stream for accepting wave samples.
+  ///
+  /// @param recognizer  A pointer returned by CreateOfflineRecognizer()
+  /// @return Return a pointer to an OfflineStream. The user has to invoke
+  /// DestroyOfflineStream() to free it to avoid memory leak.
+  ffi.Pointer<SherpaOnnxOfflineStream> CreateOfflineStream(
+    ffi.Pointer<SherpaOnnxOfflineRecognizer> recognizer,
+  ) {
+    return _CreateOfflineStream(
+      recognizer,
+    );
+  }
+
+  late final _CreateOfflineStreamPtr = _lookup<
+          ffi.NativeFunction<
+              ffi.Pointer<SherpaOnnxOfflineStream> Function(
+                  ffi.Pointer<SherpaOnnxOfflineRecognizer>)>>(
+      'CreateOfflineStream');
+  late final _CreateOfflineStream = _CreateOfflineStreamPtr.asFunction<
+      ffi.Pointer<SherpaOnnxOfflineStream> Function(
+          ffi.Pointer<SherpaOnnxOfflineRecognizer>)>();
+
+  /// Destroy an offline stream.
+  ///
+  /// @param stream A pointer returned by CreateOfflineStream()
+  void DestroyOfflineStream(
+    ffi.Pointer<SherpaOnnxOfflineStream> stream,
+  ) {
+    return _DestroyOfflineStream(
+      stream,
+    );
+  }
+
+  late final _DestroyOfflineStreamPtr = _lookup<
+      ffi.NativeFunction<
+          ffi.Void Function(
+              ffi.Pointer<SherpaOnnxOfflineStream>)>>('DestroyOfflineStream');
+  late final _DestroyOfflineStream = _DestroyOfflineStreamPtr.asFunction<
+      void Function(ffi.Pointer<SherpaOnnxOfflineStream>)>();
+
+  /// Accept input audio samples and compute the features.
+  /// The user has to invoke DecodeOfflineStream() to run the neural network and
+  /// decoding.
+  ///
+  /// @param stream  A pointer returned by CreateOfflineStream().
+  /// @param sample_rate  Sample rate of the input samples. If it is different
+  /// from config.feat_config.sample_rate, we will do
+  /// resampling inside sherpa-onnx.
+  /// @param samples A pointer to a 1-D array containing audio samples.
+  /// The range of samples has to be normalized to [-1, 1].
+  /// @param n  Number of elements in the samples array.
+  ///
+  /// @caution: For each offline stream, please invoke this function only once!
+  void AcceptWaveformOffline(
+    ffi.Pointer<SherpaOnnxOfflineStream> stream,
+    int sample_rate,
+    ffi.Pointer<ffi.Float> samples,
+    int n,
+  ) {
+    return _AcceptWaveformOffline(
+      stream,
+      sample_rate,
+      samples,
+      n,
+    );
+  }
+
+  late final _AcceptWaveformOfflinePtr = _lookup<
+      ffi.NativeFunction<
+          ffi.Void Function(ffi.Pointer<SherpaOnnxOfflineStream>, ffi.Int32,
+              ffi.Pointer<ffi.Float>, ffi.Int32)>>('AcceptWaveformOffline');
+  late final _AcceptWaveformOffline = _AcceptWaveformOfflinePtr.asFunction<
+      void Function(ffi.Pointer<SherpaOnnxOfflineStream>, int,
+          ffi.Pointer<ffi.Float>, int)>();
+
+  /// Decode an offline stream.
+  ///
+  /// We assume you have invoked AcceptWaveformOffline() for the given stream
+  /// before calling this function.
+  ///
+  /// @param recognizer A pointer returned by CreateOfflineRecognizer().
+  /// @param stream A pointer returned by CreateOfflineStream()
+  void DecodeOfflineStream(
+    ffi.Pointer<SherpaOnnxOfflineRecognizer> recognizer,
+    ffi.Pointer<SherpaOnnxOfflineStream> stream,
+  ) {
+    return _DecodeOfflineStream(
+      recognizer,
+      stream,
+    );
+  }
+
+  late final _DecodeOfflineStreamPtr = _lookup<
+      ffi.NativeFunction<
+          ffi.Void Function(ffi.Pointer<SherpaOnnxOfflineRecognizer>,
+              ffi.Pointer<SherpaOnnxOfflineStream>)>>('DecodeOfflineStream');
+  late final _DecodeOfflineStream = _DecodeOfflineStreamPtr.asFunction<
+      void Function(ffi.Pointer<SherpaOnnxOfflineRecognizer>,
+          ffi.Pointer<SherpaOnnxOfflineStream>)>();
+
+  /// Decode a list offline streams in parallel.
+  ///
+  /// We assume you have invoked AcceptWaveformOffline() for each stream
+  /// before calling this function.
+  ///
+  /// @param recognizer A pointer returned by CreateOfflineRecognizer().
+  /// @param streams A pointer pointer array containing pointers returned
+  /// by CreateOfflineStream().
+  /// @param n Number of entries in the given streams.
+  void DecodeMultipleOfflineStreams(
+    ffi.Pointer<SherpaOnnxOfflineRecognizer> recognizer,
+    ffi.Pointer<ffi.Pointer<SherpaOnnxOfflineStream>> streams,
+    int n,
+  ) {
+    return _DecodeMultipleOfflineStreams(
+      recognizer,
+      streams,
+      n,
+    );
+  }
+
+  late final _DecodeMultipleOfflineStreamsPtr = _lookup<
+      ffi.NativeFunction<
+          ffi.Void Function(
+              ffi.Pointer<SherpaOnnxOfflineRecognizer>,
+              ffi.Pointer<ffi.Pointer<SherpaOnnxOfflineStream>>,
+              ffi.Int32)>>('DecodeMultipleOfflineStreams');
+  late final _DecodeMultipleOfflineStreams =
+      _DecodeMultipleOfflineStreamsPtr.asFunction<
+          void Function(ffi.Pointer<SherpaOnnxOfflineRecognizer>,
+              ffi.Pointer<ffi.Pointer<SherpaOnnxOfflineStream>>, int)>();
+
+  /// Get the result of the offline stream.
+  ///
+  /// We assume you have called DecodeOfflineStream() or
+  /// DecodeMultipleOfflineStreams() with the given stream before calling
+  /// this function.
+  ///
+  /// @param stream A pointer returned by CreateOfflineStream().
+  /// @return Return a pointer to the result. The user has to invoke
+  /// DestroyOnlineRecognizerResult() to free the returned pointer to
+  /// avoid memory leak.
+  ffi.Pointer<SherpaOnnxOfflineRecognizerResult> GetOfflineStreamResult(
+    ffi.Pointer<SherpaOnnxOfflineStream> stream,
+  ) {
+    return _GetOfflineStreamResult(
+      stream,
+    );
+  }
+
+  late final _GetOfflineStreamResultPtr = _lookup<
+      ffi.NativeFunction<
+          ffi.Pointer<SherpaOnnxOfflineRecognizerResult> Function(
+              ffi.Pointer<SherpaOnnxOfflineStream>)>>('GetOfflineStreamResult');
+  late final _GetOfflineStreamResult = _GetOfflineStreamResultPtr.asFunction<
+      ffi.Pointer<SherpaOnnxOfflineRecognizerResult> Function(
+          ffi.Pointer<SherpaOnnxOfflineStream>)>();
+
+  /// Destroy the pointer returned by GetOfflineStreamResult().
+  ///
+  /// @param r A pointer returned by GetOfflineStreamResult()
+  void DestroyOfflineRecognizerResult(
+    ffi.Pointer<SherpaOnnxOfflineRecognizerResult> r,
+  ) {
+    return _DestroyOfflineRecognizerResult(
+      r,
+    );
+  }
+
+  late final _DestroyOfflineRecognizerResultPtr = _lookup<
+          ffi.NativeFunction<
+              ffi.Void Function(
+                  ffi.Pointer<SherpaOnnxOfflineRecognizerResult>)>>(
+      'DestroyOfflineRecognizerResult');
+  late final _DestroyOfflineRecognizerResult =
+      _DestroyOfflineRecognizerResultPtr.asFunction<
+          void Function(ffi.Pointer<SherpaOnnxOfflineRecognizerResult>)>();
+
+  /// Return an instance of circular buffer. The user has to use
+  /// SherpaOnnxDestroyCircularBuffer() to free the returned pointer to avoid
+  /// memory leak.
+  ffi.Pointer<SherpaOnnxCircularBuffer> SherpaOnnxCreateCircularBuffer(
+    int capacity,
+  ) {
+    return _SherpaOnnxCreateCircularBuffer(
+      capacity,
+    );
+  }
+
+  late final _SherpaOnnxCreateCircularBufferPtr = _lookup<
+      ffi.NativeFunction<
+          ffi.Pointer<SherpaOnnxCircularBuffer> Function(
+              ffi.Int32)>>('SherpaOnnxCreateCircularBuffer');
+  late final _SherpaOnnxCreateCircularBuffer =
+      _SherpaOnnxCreateCircularBufferPtr.asFunction<
+          ffi.Pointer<SherpaOnnxCircularBuffer> Function(int)>();
+
+  /// Free the pointer returned by SherpaOnnxCreateCircularBuffer()
+  void SherpaOnnxDestroyCircularBuffer(
+    ffi.Pointer<SherpaOnnxCircularBuffer> buffer,
+  ) {
+    return _SherpaOnnxDestroyCircularBuffer(
+      buffer,
+    );
+  }
+
+  late final _SherpaOnnxDestroyCircularBufferPtr = _lookup<
+          ffi.NativeFunction<
+              ffi.Void Function(ffi.Pointer<SherpaOnnxCircularBuffer>)>>(
+      'SherpaOnnxDestroyCircularBuffer');
+  late final _SherpaOnnxDestroyCircularBuffer =
+      _SherpaOnnxDestroyCircularBufferPtr.asFunction<
+          void Function(ffi.Pointer<SherpaOnnxCircularBuffer>)>();
+
+  void SherpaOnnxCircularBufferPush(
+    ffi.Pointer<SherpaOnnxCircularBuffer> buffer,
+    ffi.Pointer<ffi.Float> p,
+    int n,
+  ) {
+    return _SherpaOnnxCircularBufferPush(
+      buffer,
+      p,
+      n,
+    );
+  }
+
+  late final _SherpaOnnxCircularBufferPushPtr = _lookup<
+      ffi.NativeFunction<
+          ffi.Void Function(
+              ffi.Pointer<SherpaOnnxCircularBuffer>,
+              ffi.Pointer<ffi.Float>,
+              ffi.Int32)>>('SherpaOnnxCircularBufferPush');
+  late final _SherpaOnnxCircularBufferPush =
+      _SherpaOnnxCircularBufferPushPtr.asFunction<
+          void Function(ffi.Pointer<SherpaOnnxCircularBuffer>,
+              ffi.Pointer<ffi.Float>, int)>();
+
+  /// Return n samples starting at the given index.
+  ///
+  /// Return a pointer to an array containing n samples starting at start_index.
+  /// The user has to use SherpaOnnxCircularBufferFree() to free the returned
+  /// pointer to avoid memory leak.
+  ffi.Pointer<ffi.Float> SherpaOnnxCircularBufferGet(
+    ffi.Pointer<SherpaOnnxCircularBuffer> buffer,
+    int start_index,
+    int n,
+  ) {
+    return _SherpaOnnxCircularBufferGet(
+      buffer,
+      start_index,
+      n,
+    );
+  }
+
+  late final _SherpaOnnxCircularBufferGetPtr = _lookup<
+      ffi.NativeFunction<
+          ffi.Pointer<ffi.Float> Function(ffi.Pointer<SherpaOnnxCircularBuffer>,
+              ffi.Int32, ffi.Int32)>>('SherpaOnnxCircularBufferGet');
+  late final _SherpaOnnxCircularBufferGet =
+      _SherpaOnnxCircularBufferGetPtr.asFunction<
+          ffi.Pointer<ffi.Float> Function(
+              ffi.Pointer<SherpaOnnxCircularBuffer>, int, int)>();
+
+  /// Free the pointer returned by SherpaOnnxCircularBufferGet().
+  void SherpaOnnxCircularBufferFree(
+    ffi.Pointer<ffi.Float> p,
+  ) {
+    return _SherpaOnnxCircularBufferFree(
+      p,
+    );
+  }
+
+  late final _SherpaOnnxCircularBufferFreePtr =
+      _lookup<ffi.NativeFunction<ffi.Void Function(ffi.Pointer<ffi.Float>)>>(
+          'SherpaOnnxCircularBufferFree');
+  late final _SherpaOnnxCircularBufferFree = _SherpaOnnxCircularBufferFreePtr
+      .asFunction<void Function(ffi.Pointer<ffi.Float>)>();
+
+  /// Remove n elements from the buffer
+  void SherpaOnnxCircularBufferPop(
+    ffi.Pointer<SherpaOnnxCircularBuffer> buffer,
+    int n,
+  ) {
+    return _SherpaOnnxCircularBufferPop(
+      buffer,
+      n,
+    );
+  }
+
+  late final _SherpaOnnxCircularBufferPopPtr = _lookup<
+      ffi.NativeFunction<
+          ffi.Void Function(ffi.Pointer<SherpaOnnxCircularBuffer>,
+              ffi.Int32)>>('SherpaOnnxCircularBufferPop');
+  late final _SherpaOnnxCircularBufferPop = _SherpaOnnxCircularBufferPopPtr
+      .asFunction<void Function(ffi.Pointer<SherpaOnnxCircularBuffer>, int)>();
+
+  /// Return number of elements in the buffer.
+  int SherpaOnnxCircularBufferSize(
+    ffi.Pointer<SherpaOnnxCircularBuffer> buffer,
+  ) {
+    return _SherpaOnnxCircularBufferSize(
+      buffer,
+    );
+  }
+
+  late final _SherpaOnnxCircularBufferSizePtr = _lookup<
+          ffi.NativeFunction<
+              ffi.Int32 Function(ffi.Pointer<SherpaOnnxCircularBuffer>)>>(
+      'SherpaOnnxCircularBufferSize');
+  late final _SherpaOnnxCircularBufferSize = _SherpaOnnxCircularBufferSizePtr
+      .asFunction<int Function(ffi.Pointer<SherpaOnnxCircularBuffer>)>();
+
+  /// Return the head of the buffer. It's always non-decreasing until you
+  /// invoke SherpaOnnxCircularBufferReset() which resets head to 0.
+  int SherpaOnnxCircularBufferHead(
+    ffi.Pointer<SherpaOnnxCircularBuffer> buffer,
+  ) {
+    return _SherpaOnnxCircularBufferHead(
+      buffer,
+    );
+  }
+
+  late final _SherpaOnnxCircularBufferHeadPtr = _lookup<
+          ffi.NativeFunction<
+              ffi.Int32 Function(ffi.Pointer<SherpaOnnxCircularBuffer>)>>(
+      'SherpaOnnxCircularBufferHead');
+  late final _SherpaOnnxCircularBufferHead = _SherpaOnnxCircularBufferHeadPtr
+      .asFunction<int Function(ffi.Pointer<SherpaOnnxCircularBuffer>)>();
+
+  /// Clear all elements in the buffer
+  void SherpaOnnxCircularBufferReset(
+    ffi.Pointer<SherpaOnnxCircularBuffer> buffer,
+  ) {
+    return _SherpaOnnxCircularBufferReset(
+      buffer,
+    );
+  }
+
+  late final _SherpaOnnxCircularBufferResetPtr = _lookup<
+          ffi.NativeFunction<
+              ffi.Void Function(ffi.Pointer<SherpaOnnxCircularBuffer>)>>(
+      'SherpaOnnxCircularBufferReset');
+  late final _SherpaOnnxCircularBufferReset = _SherpaOnnxCircularBufferResetPtr
+      .asFunction<void Function(ffi.Pointer<SherpaOnnxCircularBuffer>)>();
+
+  /// Return an instance of VoiceActivityDetector.
+  /// The user has to use SherpaOnnxDestroyVoiceActivityDetector() to free
+  /// the returned pointer to avoid memory leak.
+  ffi.Pointer<SherpaOnnxVoiceActivityDetector>
+      SherpaOnnxCreateVoiceActivityDetector(
+    ffi.Pointer<SherpaOnnxVadModelConfig> config,
+    double buffer_size_in_seconds,
+  ) {
+    return _SherpaOnnxCreateVoiceActivityDetector(
+      config,
+      buffer_size_in_seconds,
+    );
+  }
+
+  late final _SherpaOnnxCreateVoiceActivityDetectorPtr = _lookup<
+      ffi.NativeFunction<
+          ffi.Pointer<SherpaOnnxVoiceActivityDetector> Function(
+              ffi.Pointer<SherpaOnnxVadModelConfig>,
+              ffi.Float)>>('SherpaOnnxCreateVoiceActivityDetector');
+  late final _SherpaOnnxCreateVoiceActivityDetector =
+      _SherpaOnnxCreateVoiceActivityDetectorPtr.asFunction<
+          ffi.Pointer<SherpaOnnxVoiceActivityDetector> Function(
+              ffi.Pointer<SherpaOnnxVadModelConfig>, double)>();
+
+  void SherpaOnnxDestroyVoiceActivityDetector(
+    ffi.Pointer<SherpaOnnxVoiceActivityDetector> p,
+  ) {
+    return _SherpaOnnxDestroyVoiceActivityDetector(
+      p,
+    );
+  }
+
+  late final _SherpaOnnxDestroyVoiceActivityDetectorPtr = _lookup<
+          ffi.NativeFunction<
+              ffi.Void Function(ffi.Pointer<SherpaOnnxVoiceActivityDetector>)>>(
+      'SherpaOnnxDestroyVoiceActivityDetector');
+  late final _SherpaOnnxDestroyVoiceActivityDetector =
+      _SherpaOnnxDestroyVoiceActivityDetectorPtr.asFunction<
+          void Function(ffi.Pointer<SherpaOnnxVoiceActivityDetector>)>();
+
+  void SherpaOnnxVoiceActivityDetectorAcceptWaveform(
+    ffi.Pointer<SherpaOnnxVoiceActivityDetector> p,
+    ffi.Pointer<ffi.Float> samples,
+    int n,
+  ) {
+    return _SherpaOnnxVoiceActivityDetectorAcceptWaveform(
+      p,
+      samples,
+      n,
+    );
+  }
+
+  late final _SherpaOnnxVoiceActivityDetectorAcceptWaveformPtr = _lookup<
+      ffi.NativeFunction<
+          ffi.Void Function(
+              ffi.Pointer<SherpaOnnxVoiceActivityDetector>,
+              ffi.Pointer<ffi.Float>,
+              ffi.Int32)>>('SherpaOnnxVoiceActivityDetectorAcceptWaveform');
+  late final _SherpaOnnxVoiceActivityDetectorAcceptWaveform =
+      _SherpaOnnxVoiceActivityDetectorAcceptWaveformPtr.asFunction<
+          void Function(ffi.Pointer<SherpaOnnxVoiceActivityDetector>,
+              ffi.Pointer<ffi.Float>, int)>();
+
+  /// Return 1 if there are no speech segments available.
+  /// Return 0 if there are speech segments.
+  int SherpaOnnxVoiceActivityDetectorEmpty(
+    ffi.Pointer<SherpaOnnxVoiceActivityDetector> p,
+  ) {
+    return _SherpaOnnxVoiceActivityDetectorEmpty(
+      p,
+    );
+  }
+
+  late final _SherpaOnnxVoiceActivityDetectorEmptyPtr = _lookup<
+          ffi.NativeFunction<
+              ffi.Int32 Function(
+                  ffi.Pointer<SherpaOnnxVoiceActivityDetector>)>>(
+      'SherpaOnnxVoiceActivityDetectorEmpty');
+  late final _SherpaOnnxVoiceActivityDetectorEmpty =
+      _SherpaOnnxVoiceActivityDetectorEmptyPtr.asFunction<
+          int Function(ffi.Pointer<SherpaOnnxVoiceActivityDetector>)>();
+
+  /// Return 1 if there is voice detected.
+  /// Return 0 if voice is silent.
+  int SherpaOnnxVoiceActivityDetectorDetected(
+    ffi.Pointer<SherpaOnnxVoiceActivityDetector> p,
+  ) {
+    return _SherpaOnnxVoiceActivityDetectorDetected(
+      p,
+    );
+  }
+
+  late final _SherpaOnnxVoiceActivityDetectorDetectedPtr = _lookup<
+          ffi.NativeFunction<
+              ffi.Int32 Function(
+                  ffi.Pointer<SherpaOnnxVoiceActivityDetector>)>>(
+      'SherpaOnnxVoiceActivityDetectorDetected');
+  late final _SherpaOnnxVoiceActivityDetectorDetected =
+      _SherpaOnnxVoiceActivityDetectorDetectedPtr.asFunction<
+          int Function(ffi.Pointer<SherpaOnnxVoiceActivityDetector>)>();
+
+  /// Return the first speech segment.
+  /// It throws if SherpaOnnxVoiceActivityDetectorEmpty() returns 1.
+  void SherpaOnnxVoiceActivityDetectorPop(
+    ffi.Pointer<SherpaOnnxVoiceActivityDetector> p,
+  ) {
+    return _SherpaOnnxVoiceActivityDetectorPop(
+      p,
+    );
+  }
+
+  late final _SherpaOnnxVoiceActivityDetectorPopPtr = _lookup<
+          ffi.NativeFunction<
+              ffi.Void Function(ffi.Pointer<SherpaOnnxVoiceActivityDetector>)>>(
+      'SherpaOnnxVoiceActivityDetectorPop');
+  late final _SherpaOnnxVoiceActivityDetectorPop =
+      _SherpaOnnxVoiceActivityDetectorPopPtr.asFunction<
+          void Function(ffi.Pointer<SherpaOnnxVoiceActivityDetector>)>();
+
+  /// Clear current speech segments.
+  void SherpaOnnxVoiceActivityDetectorClear(
+    ffi.Pointer<SherpaOnnxVoiceActivityDetector> p,
+  ) {
+    return _SherpaOnnxVoiceActivityDetectorClear(
+      p,
+    );
+  }
+
+  late final _SherpaOnnxVoiceActivityDetectorClearPtr = _lookup<
+          ffi.NativeFunction<
+              ffi.Void Function(ffi.Pointer<SherpaOnnxVoiceActivityDetector>)>>(
+      'SherpaOnnxVoiceActivityDetectorClear');
+  late final _SherpaOnnxVoiceActivityDetectorClear =
+      _SherpaOnnxVoiceActivityDetectorClearPtr.asFunction<
+          void Function(ffi.Pointer<SherpaOnnxVoiceActivityDetector>)>();
+
+  /// Return the first speech segment.
+  /// The user has to use SherpaOnnxDestroySpeechSegment() to free the returned
+  /// pointer to avoid memory leak.
+  ffi.Pointer<SherpaOnnxSpeechSegment> SherpaOnnxVoiceActivityDetectorFront(
+    ffi.Pointer<SherpaOnnxVoiceActivityDetector> p,
+  ) {
+    return _SherpaOnnxVoiceActivityDetectorFront(
+      p,
+    );
+  }
+
+  late final _SherpaOnnxVoiceActivityDetectorFrontPtr = _lookup<
+          ffi.NativeFunction<
+              ffi.Pointer<SherpaOnnxSpeechSegment> Function(
+                  ffi.Pointer<SherpaOnnxVoiceActivityDetector>)>>(
+      'SherpaOnnxVoiceActivityDetectorFront');
+  late final _SherpaOnnxVoiceActivityDetectorFront =
+      _SherpaOnnxVoiceActivityDetectorFrontPtr.asFunction<
+          ffi.Pointer<SherpaOnnxSpeechSegment> Function(
+              ffi.Pointer<SherpaOnnxVoiceActivityDetector>)>();
+
+  /// Free the pointer returned SherpaOnnxVoiceActivityDetectorFront().
+  void SherpaOnnxDestroySpeechSegment(
+    ffi.Pointer<SherpaOnnxSpeechSegment> p,
+  ) {
+    return _SherpaOnnxDestroySpeechSegment(
+      p,
+    );
+  }
+
+  late final _SherpaOnnxDestroySpeechSegmentPtr = _lookup<
+          ffi.NativeFunction<
+              ffi.Void Function(ffi.Pointer<SherpaOnnxSpeechSegment>)>>(
+      'SherpaOnnxDestroySpeechSegment');
+  late final _SherpaOnnxDestroySpeechSegment =
+      _SherpaOnnxDestroySpeechSegmentPtr.asFunction<
+          void Function(ffi.Pointer<SherpaOnnxSpeechSegment>)>();
+
+  /// Re-initialize the voice activity detector.
+  void SherpaOnnxVoiceActivityDetectorReset(
+    ffi.Pointer<SherpaOnnxVoiceActivityDetector> p,
+  ) {
+    return _SherpaOnnxVoiceActivityDetectorReset(
+      p,
+    );
+  }
+
+  late final _SherpaOnnxVoiceActivityDetectorResetPtr = _lookup<
+          ffi.NativeFunction<
+              ffi.Void Function(ffi.Pointer<SherpaOnnxVoiceActivityDetector>)>>(
+      'SherpaOnnxVoiceActivityDetectorReset');
+  late final _SherpaOnnxVoiceActivityDetectorReset =
+      _SherpaOnnxVoiceActivityDetectorResetPtr.asFunction<
+          void Function(ffi.Pointer<SherpaOnnxVoiceActivityDetector>)>();
+
+  /// Create an instance of offline TTS. The user has to use DestroyOfflineTts()
+  /// to free the returned pointer to avoid memory leak.
+  ffi.Pointer<SherpaOnnxOfflineTts> SherpaOnnxCreateOfflineTts(
+    ffi.Pointer<SherpaOnnxOfflineTtsConfig> config,
+  ) {
+    return _SherpaOnnxCreateOfflineTts(
+      config,
+    );
+  }
+
+  late final _SherpaOnnxCreateOfflineTtsPtr = _lookup<
+          ffi.NativeFunction<
+              ffi.Pointer<SherpaOnnxOfflineTts> Function(
+                  ffi.Pointer<SherpaOnnxOfflineTtsConfig>)>>(
+      'SherpaOnnxCreateOfflineTts');
+  late final _SherpaOnnxCreateOfflineTts =
+      _SherpaOnnxCreateOfflineTtsPtr.asFunction<
+          ffi.Pointer<SherpaOnnxOfflineTts> Function(
+              ffi.Pointer<SherpaOnnxOfflineTtsConfig>)>();
+
+  /// Free the pointer returned by CreateOfflineTts()
+  void SherpaOnnxDestroyOfflineTts(
+    ffi.Pointer<SherpaOnnxOfflineTts> tts,
+  ) {
+    return _SherpaOnnxDestroyOfflineTts(
+      tts,
+    );
+  }
+
+  late final _SherpaOnnxDestroyOfflineTtsPtr = _lookup<
+          ffi.NativeFunction<
+              ffi.Void Function(ffi.Pointer<SherpaOnnxOfflineTts>)>>(
+      'SherpaOnnxDestroyOfflineTts');
+  late final _SherpaOnnxDestroyOfflineTts = _SherpaOnnxDestroyOfflineTtsPtr
+      .asFunction<void Function(ffi.Pointer<SherpaOnnxOfflineTts>)>();
+
+  /// Return the sample rate of the current TTS object
+  int SherpaOnnxOfflineTtsSampleRate(
+    ffi.Pointer<SherpaOnnxOfflineTts> tts,
+  ) {
+    return _SherpaOnnxOfflineTtsSampleRate(
+      tts,
+    );
+  }
+
+  late final _SherpaOnnxOfflineTtsSampleRatePtr = _lookup<
+          ffi.NativeFunction<
+              ffi.Int32 Function(ffi.Pointer<SherpaOnnxOfflineTts>)>>(
+      'SherpaOnnxOfflineTtsSampleRate');
+  late final _SherpaOnnxOfflineTtsSampleRate =
+      _SherpaOnnxOfflineTtsSampleRatePtr.asFunction<
+          int Function(ffi.Pointer<SherpaOnnxOfflineTts>)>();
+
+  /// Generate audio from the given text and speaker id (sid).
+  /// The user has to use DestroyOfflineTtsGeneratedAudio() to free the
+  /// returned pointer to avoid memory leak.
+  ffi.Pointer<SherpaOnnxGeneratedAudio> SherpaOnnxOfflineTtsGenerate(
+    ffi.Pointer<SherpaOnnxOfflineTts> tts,
+    ffi.Pointer<ffi.Char> text,
+    int sid,
+    double speed,
+  ) {
+    return _SherpaOnnxOfflineTtsGenerate(
+      tts,
+      text,
+      sid,
+      speed,
+    );
+  }
+
+  late final _SherpaOnnxOfflineTtsGeneratePtr = _lookup<
+      ffi.NativeFunction<
+          ffi.Pointer<SherpaOnnxGeneratedAudio> Function(
+              ffi.Pointer<SherpaOnnxOfflineTts>,
+              ffi.Pointer<ffi.Char>,
+              ffi.Int32,
+              ffi.Float)>>('SherpaOnnxOfflineTtsGenerate');
+  late final _SherpaOnnxOfflineTtsGenerate =
+      _SherpaOnnxOfflineTtsGeneratePtr.asFunction<
+          ffi.Pointer<SherpaOnnxGeneratedAudio> Function(
+              ffi.Pointer<SherpaOnnxOfflineTts>,
+              ffi.Pointer<ffi.Char>,
+              int,
+              double)>();
+
+  /// callback is called whenever SherpaOnnxOfflineTtsConfig.max_num_sentences
+  /// sentences have been processed. The pointer passed to the callback
+  /// is freed once the callback is returned. So the caller should not keep
+  /// a reference to it.
+  ffi.Pointer<SherpaOnnxGeneratedAudio>
+      SherpaOnnxOfflineTtsGenerateWithCallback(
+    ffi.Pointer<SherpaOnnxOfflineTts> tts,
+    ffi.Pointer<ffi.Char> text,
+    int sid,
+    double speed,
+    SherpaOnnxGeneratedAudioCallback callback,
+  ) {
+    return _SherpaOnnxOfflineTtsGenerateWithCallback(
+      tts,
+      text,
+      sid,
+      speed,
+      callback,
+    );
+  }
+
+  late final _SherpaOnnxOfflineTtsGenerateWithCallbackPtr = _lookup<
+          ffi.NativeFunction<
+              ffi.Pointer<SherpaOnnxGeneratedAudio> Function(
+                  ffi.Pointer<SherpaOnnxOfflineTts>,
+                  ffi.Pointer<ffi.Char>,
+                  ffi.Int32,
+                  ffi.Float,
+                  SherpaOnnxGeneratedAudioCallback)>>(
+      'SherpaOnnxOfflineTtsGenerateWithCallback');
+  late final _SherpaOnnxOfflineTtsGenerateWithCallback =
+      _SherpaOnnxOfflineTtsGenerateWithCallbackPtr.asFunction<
+          ffi.Pointer<SherpaOnnxGeneratedAudio> Function(
+              ffi.Pointer<SherpaOnnxOfflineTts>,
+              ffi.Pointer<ffi.Char>,
+              int,
+              double,
+              SherpaOnnxGeneratedAudioCallback)>();
+
+  void SherpaOnnxDestroyOfflineTtsGeneratedAudio(
+    ffi.Pointer<SherpaOnnxGeneratedAudio> p,
+  ) {
+    return _SherpaOnnxDestroyOfflineTtsGeneratedAudio(
+      p,
+    );
+  }
+
+  late final _SherpaOnnxDestroyOfflineTtsGeneratedAudioPtr = _lookup<
+          ffi.NativeFunction<
+              ffi.Void Function(ffi.Pointer<SherpaOnnxGeneratedAudio>)>>(
+      'SherpaOnnxDestroyOfflineTtsGeneratedAudio');
+  late final _SherpaOnnxDestroyOfflineTtsGeneratedAudio =
+      _SherpaOnnxDestroyOfflineTtsGeneratedAudioPtr.asFunction<
+          void Function(ffi.Pointer<SherpaOnnxGeneratedAudio>)>();
+
+  /// Write the generated audio to a wave file.
+  /// The saved wave file contains a single channel and has 16-bit samples.
+  ///
+  /// Return 1 if the write succeeded; return 0 on failure.
+  int SherpaOnnxWriteWave(
+    ffi.Pointer<ffi.Float> samples,
+    int n,
+    int sample_rate,
+    ffi.Pointer<ffi.Char> filename,
+  ) {
+    return _SherpaOnnxWriteWave(
+      samples,
+      n,
+      sample_rate,
+      filename,
+    );
+  }
+
+  late final _SherpaOnnxWriteWavePtr = _lookup<
+      ffi.NativeFunction<
+          ffi.Int32 Function(ffi.Pointer<ffi.Float>, ffi.Int32, ffi.Int32,
+              ffi.Pointer<ffi.Char>)>>('SherpaOnnxWriteWave');
+  late final _SherpaOnnxWriteWave = _SherpaOnnxWriteWavePtr.asFunction<
+      int Function(ffi.Pointer<ffi.Float>, int, int, ffi.Pointer<ffi.Char>)>();
 }
 
 /// C interface
@@ -2891,6 +4013,374 @@ typedef Dart__int64_t = int;
 
 /// hold a buncha junk that would grow the ABI
 final class __sFILEX extends ffi.Opaque {}
+
+/// Please refer to
+/// https://k2-fsa.github.io/sherpa/onnx/pretrained_models/index.html
+/// to download pre-trained models. That is, you can find encoder-xxx.onnx
+/// decoder-xxx.onnx, joiner-xxx.onnx, and tokens.txt for this struct
+/// from there.
+final class SherpaOnnxOnlineTransducerModelConfig extends ffi.Struct {
+  external ffi.Pointer<ffi.Char> encoder;
+
+  external ffi.Pointer<ffi.Char> decoder;
+
+  external ffi.Pointer<ffi.Char> joiner;
+}
+
+/// please visit
+/// https://k2-fsa.github.io/sherpa/onnx/pretrained_models/online-paraformer/index.html
+/// to download pre-trained streaming paraformer models
+final class SherpaOnnxOnlineParaformerModelConfig extends ffi.Struct {
+  external ffi.Pointer<ffi.Char> encoder;
+
+  external ffi.Pointer<ffi.Char> decoder;
+}
+
+/// Please visit
+/// https://k2-fsa.github.io/sherpa/onnx/pretrained_models/online-ctc/zipformer-ctc-models.html#
+/// to download pre-trained streaming zipformer2 ctc models
+final class SherpaOnnxOnlineZipformer2CtcModelConfig extends ffi.Struct {
+  external ffi.Pointer<ffi.Char> model;
+}
+
+final class SherpaOnnxOnlineModelConfig extends ffi.Struct {
+  external SherpaOnnxOnlineTransducerModelConfig transducer;
+
+  external SherpaOnnxOnlineParaformerModelConfig paraformer;
+
+  external SherpaOnnxOnlineZipformer2CtcModelConfig zipformer2_ctc;
+
+  external ffi.Pointer<ffi.Char> tokens;
+
+  @ffi.Int32()
+  external int num_threads;
+
+  external ffi.Pointer<ffi.Char> provider;
+
+  /// true to print debug information of the model
+  @ffi.Int32()
+  external int debug;
+
+  external ffi.Pointer<ffi.Char> model_type;
+}
+
+/// It expects 16 kHz 16-bit single channel wave format.
+final class SherpaOnnxFeatureConfig extends ffi.Struct {
+  /// Sample rate of the input data. MUST match the one expected
+  /// by the model. For instance, it should be 16000 for models provided
+  /// by us.
+  @ffi.Int32()
+  external int sample_rate;
+
+  /// Feature dimension of the model.
+  /// For instance, it should be 80 for models provided by us.
+  @ffi.Int32()
+  external int feature_dim;
+}
+
+final class SherpaOnnxOnlineRecognizerConfig extends ffi.Struct {
+  external SherpaOnnxFeatureConfig feat_config;
+
+  external SherpaOnnxOnlineModelConfig model_config;
+
+  /// Possible values are: greedy_search, modified_beam_search
+  external ffi.Pointer<ffi.Char> decoding_method;
+
+  /// Used only when decoding_method is modified_beam_search
+  /// Example value: 4
+  @ffi.Int32()
+  external int max_active_paths;
+
+  /// 0 to disable endpoint detection.
+  /// A non-zero value to enable endpoint detection.
+  @ffi.Int32()
+  external int enable_endpoint;
+
+  /// An endpoint is detected if trailing silence in seconds is larger than
+  /// this value even if nothing has been decoded.
+  /// Used only when enable_endpoint is not 0.
+  @ffi.Float()
+  external double rule1_min_trailing_silence;
+
+  /// An endpoint is detected if trailing silence in seconds is larger than
+  /// this value after something that is not blank has been decoded.
+  /// Used only when enable_endpoint is not 0.
+  @ffi.Float()
+  external double rule2_min_trailing_silence;
+
+  /// An endpoint is detected if the utterance in seconds is larger than
+  /// this value.
+  /// Used only when enable_endpoint is not 0.
+  @ffi.Float()
+  external double rule3_min_utterance_length;
+
+  /// Path to the hotwords.
+  external ffi.Pointer<ffi.Char> hotwords_file;
+
+  /// Bonus score for each token in hotwords.
+  @ffi.Float()
+  external double hotwords_score;
+}
+
+final class SherpaOnnxOnlineRecognizerResult extends ffi.Struct {
+  /// Recognized text
+  external ffi.Pointer<ffi.Char> text;
+
+  /// Pointer to continuous memory which holds string based tokens
+  /// which are separated by \0
+  external ffi.Pointer<ffi.Char> tokens;
+
+  /// a pointer array containing the address of the first item in tokens
+  external ffi.Pointer<ffi.Pointer<ffi.Char>> tokens_arr;
+
+  /// Pointer to continuous memory which holds timestamps
+  external ffi.Pointer<ffi.Float> timestamps;
+
+  /// The number of tokens/timestamps in above pointer
+  @ffi.Int32()
+  external int count;
+
+  /// Return a json string.
+  ///
+  /// The returned string contains:
+  /// {
+  /// "text": "The recognition result",
+  /// "tokens": [x, x, x],
+  /// "timestamps": [x, x, x],
+  /// "segment": x,
+  /// "start_time": x,
+  /// "is_final": true|false
+  /// }
+  external ffi.Pointer<ffi.Char> json;
+}
+
+final class SherpaOnnxOnlineRecognizer extends ffi.Opaque {}
+
+final class SherpaOnnxOnlineStream extends ffi.Opaque {}
+
+final class SherpaOnnxDisplay extends ffi.Opaque {}
+
+/// Please refer to
+/// https://k2-fsa.github.io/sherpa/onnx/pretrained_models/index.html
+/// to download pre-trained models. That is, you can find encoder-xxx.onnx
+/// decoder-xxx.onnx, and joiner-xxx.onnx for this struct
+/// from there.
+final class SherpaOnnxOfflineTransducerModelConfig extends ffi.Struct {
+  external ffi.Pointer<ffi.Char> encoder;
+
+  external ffi.Pointer<ffi.Char> decoder;
+
+  external ffi.Pointer<ffi.Char> joiner;
+}
+
+final class SherpaOnnxOfflineParaformerModelConfig extends ffi.Struct {
+  external ffi.Pointer<ffi.Char> model;
+}
+
+final class SherpaOnnxOfflineNemoEncDecCtcModelConfig extends ffi.Struct {
+  external ffi.Pointer<ffi.Char> model;
+}
+
+final class SherpaOnnxOfflineWhisperModelConfig extends ffi.Struct {
+  external ffi.Pointer<ffi.Char> encoder;
+
+  external ffi.Pointer<ffi.Char> decoder;
+}
+
+final class SherpaOnnxOfflineTdnnModelConfig extends ffi.Struct {
+  external ffi.Pointer<ffi.Char> model;
+}
+
+final class SherpaOnnxOfflineLMConfig extends ffi.Struct {
+  external ffi.Pointer<ffi.Char> model;
+
+  @ffi.Float()
+  external double scale;
+}
+
+final class SherpaOnnxOfflineModelConfig extends ffi.Struct {
+  external SherpaOnnxOfflineTransducerModelConfig transducer;
+
+  external SherpaOnnxOfflineParaformerModelConfig paraformer;
+
+  external SherpaOnnxOfflineNemoEncDecCtcModelConfig nemo_ctc;
+
+  external SherpaOnnxOfflineWhisperModelConfig whisper;
+
+  external SherpaOnnxOfflineTdnnModelConfig tdnn;
+
+  external ffi.Pointer<ffi.Char> tokens;
+
+  @ffi.Int32()
+  external int num_threads;
+
+  @ffi.Int32()
+  external int debug;
+
+  external ffi.Pointer<ffi.Char> provider;
+
+  external ffi.Pointer<ffi.Char> model_type;
+}
+
+final class SherpaOnnxOfflineRecognizerConfig extends ffi.Struct {
+  external SherpaOnnxFeatureConfig feat_config;
+
+  external SherpaOnnxOfflineModelConfig model_config;
+
+  external SherpaOnnxOfflineLMConfig lm_config;
+
+  external ffi.Pointer<ffi.Char> decoding_method;
+
+  @ffi.Int32()
+  external int max_active_paths;
+
+  /// Path to the hotwords.
+  external ffi.Pointer<ffi.Char> hotwords_file;
+
+  /// Bonus score for each token in hotwords.
+  @ffi.Float()
+  external double hotwords_score;
+}
+
+final class SherpaOnnxOfflineRecognizer extends ffi.Opaque {}
+
+final class SherpaOnnxOfflineStream extends ffi.Opaque {}
+
+final class SherpaOnnxOfflineRecognizerResult extends ffi.Struct {
+  external ffi.Pointer<ffi.Char> text;
+
+  /// Pointer to continuous memory which holds timestamps
+  ///
+  /// It is NULL if the model does not support timestamps
+  external ffi.Pointer<ffi.Float> timestamps;
+
+  /// number of entries in timestamps
+  @ffi.Int32()
+  external int count;
+}
+
+/// ============================================================
+/// For VAD
+/// ============================================================
+final class SherpaOnnxSileroVadModelConfig extends ffi.Struct {
+  /// Path to the silero VAD model
+  external ffi.Pointer<ffi.Char> model;
+
+  /// threshold to classify a segment as speech
+  ///
+  /// If the predicted probability of a segment is larger than this
+  /// value, then it is classified as speech.
+  @ffi.Float()
+  external double threshold;
+
+  /// in seconds
+  @ffi.Float()
+  external double min_silence_duration;
+
+  /// in seconds
+  @ffi.Float()
+  external double min_speech_duration;
+
+  @ffi.Int()
+  external int window_size;
+}
+
+final class SherpaOnnxVadModelConfig extends ffi.Struct {
+  external SherpaOnnxSileroVadModelConfig silero_vad;
+
+  @ffi.Int32()
+  external int sample_rate;
+
+  @ffi.Int32()
+  external int num_threads;
+
+  external ffi.Pointer<ffi.Char> provider;
+
+  @ffi.Int32()
+  external int debug;
+}
+
+final class SherpaOnnxCircularBuffer extends ffi.Opaque {}
+
+final class SherpaOnnxSpeechSegment extends ffi.Struct {
+  /// The start index in samples of this segment
+  @ffi.Int32()
+  external int start;
+
+  /// pointer to the array containing the samples
+  external ffi.Pointer<ffi.Float> samples;
+
+  /// number of samples in this segment
+  @ffi.Int32()
+  external int n;
+}
+
+final class SherpaOnnxVoiceActivityDetector extends ffi.Opaque {}
+
+/// ============================================================
+/// For offline Text-to-Speech (i.e., non-streaming TTS)
+/// ============================================================
+final class SherpaOnnxOfflineTtsVitsModelConfig extends ffi.Struct {
+  external ffi.Pointer<ffi.Char> model;
+
+  external ffi.Pointer<ffi.Char> lexicon;
+
+  external ffi.Pointer<ffi.Char> tokens;
+
+  external ffi.Pointer<ffi.Char> data_dir;
+
+  @ffi.Float()
+  external double noise_scale;
+
+  @ffi.Float()
+  external double noise_scale_w;
+
+  /// < 1, faster in speed; > 1, slower in speed
+  @ffi.Float()
+  external double length_scale;
+}
+
+final class SherpaOnnxOfflineTtsModelConfig extends ffi.Struct {
+  external SherpaOnnxOfflineTtsVitsModelConfig vits;
+
+  @ffi.Int32()
+  external int num_threads;
+
+  @ffi.Int32()
+  external int debug;
+
+  external ffi.Pointer<ffi.Char> provider;
+}
+
+final class SherpaOnnxOfflineTtsConfig extends ffi.Struct {
+  external SherpaOnnxOfflineTtsModelConfig model;
+
+  external ffi.Pointer<ffi.Char> rule_fsts;
+
+  @ffi.Int32()
+  external int max_num_sentences;
+}
+
+final class SherpaOnnxGeneratedAudio extends ffi.Struct {
+  /// in the range [-1, 1]
+  external ffi.Pointer<ffi.Float> samples;
+
+  /// number of samples
+  @ffi.Int32()
+  external int n;
+
+  @ffi.Int32()
+  external int sample_rate;
+}
+
+final class SherpaOnnxOfflineTts extends ffi.Opaque {}
+
+typedef SherpaOnnxGeneratedAudioCallback
+    = ffi.Pointer<ffi.NativeFunction<SherpaOnnxGeneratedAudioCallbackFunction>>;
+typedef SherpaOnnxGeneratedAudioCallbackFunction = ffi.Void Function(
+    ffi.Pointer<ffi.Float> samples, ffi.Int32 n);
+typedef DartSherpaOnnxGeneratedAudioCallbackFunction = void Function(
+    ffi.Pointer<ffi.Float> samples, int n);
 
 const int LLAMA_MAX_DEVICES = 1;
 
