@@ -4,3 +4,6 @@
 [submodule "src/ios-cmake"]
 	path = src/ios-cmake
 	url = https://github.com/leetal/ios-cmake.git
+[submodule "src/sherpa-onnx"]
+	path = src/sherpa-onnx
+	url = https://github.com/k2-fsa/sherpa-onnx
