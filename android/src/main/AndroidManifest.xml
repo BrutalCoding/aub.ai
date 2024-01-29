@@ -1,5 +1,5 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-    package="com.example.aub_ai">
+    package="com.brutalcoding.aub_ai">
 
     <!-- Note: This allows the app to use more memory, which is needed to load in big models. -->
     <application

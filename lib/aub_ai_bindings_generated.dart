@@ -1669,6 +1669,35 @@ class AubAiBindings {
       void Function(ffi.Pointer<llama_context>,
           ffi.Pointer<llama_token_data_array>, double, int)>();
 
+  /// @details Dynamic temperature implementation described in the paper https://arxiv.org/abs/2309.02772.
+  void llama_sample_entropy(
+    ffi.Pointer<llama_context> ctx,
+    ffi.Pointer<llama_token_data_array> candidates_p,
+    double min_temp,
+    double max_temp,
+    double exponent_val,
+  ) {
+    return _llama_sample_entropy(
+      ctx,
+      candidates_p,
+      min_temp,
+      max_temp,
+      exponent_val,
+    );
+  }
+
+  late final _llama_sample_entropyPtr = _lookup<
+      ffi.NativeFunction<
+          ffi.Void Function(
+              ffi.Pointer<llama_context>,
+              ffi.Pointer<llama_token_data_array>,
+              ffi.Float,
+              ffi.Float,
+              ffi.Float)>>('llama_sample_entropy');
+  late final _llama_sample_entropy = _llama_sample_entropyPtr.asFunction<
+      void Function(ffi.Pointer<llama_context>,
+          ffi.Pointer<llama_token_data_array>, double, double, double)>();
+
   void llama_sample_temp(
     ffi.Pointer<llama_context> ctx,
     ffi.Pointer<llama_token_data_array> candidates,
@@ -3221,6 +3250,9 @@ abstract class llama_ftype {
 
   /// except 1d tensors
   static const int LLAMA_FTYPE_MOSTLY_Q2_K_S = 21;
+
+  /// except 1d tensors
+  static const int LLAMA_FTYPE_MOSTLY_Q3_K_XS = 22;
 
   /// not specified in the model file
   static const int LLAMA_FTYPE_GUESSED = 1024;

@@ -25,6 +25,8 @@ AubAI is not only powerful and versatile but also user-friendly and open-source.
 
 - **Text Generation**: Harness the power of cutting-edge language models with AubAI for smooth text generation, elevating the user experience through advanced natural language processing. Effortlessly download and try out any GGUF model from sources such as [HuggingFace](https://huggingface.co/models?library=gguf), bringing top-tier AI functionality into your app with ease.
 
+- **Text-to-Speech (WIP)**: An initial text-to-speech feature is currently in development, a work in progress that will be available over time. Stay tuned for updates! Currently available to test in the [example app](./example/README.md) for Android ARM64_v8a only (e.g. Pixel 7).
+
 ### Cross-Platform Compatibility
 
 - **Universal Platform Support**: AubAI is meticulously designed for Flutter, ensuring seamless operation across a multitude of platforms. This broad compatibility extends to various operating systems, catering to a diverse range of development needs:
@@ -141,10 +143,6 @@ While llama.cpp is a great library, it's not trivial to integrate it into a Flut
 
 The vision of AubAI is to make AI accessible to everyone, and AI is more than just generating text. That's why AubAI is designed to be modular. Over time, more AI capabilities will be added to AubAI such as image generation, voice generation, and more.
 
-## Supported Model File Formats
-
-- [x] GGUF
-
 ### Resources
 
 If you're looking for a model file, you can find a couple here:
@@ -185,16 +183,9 @@ For your convenience, I have listed some of the videos below:
 - [Using My Offline AI App on a Pixel 7 (Android 13), Powered By My Upcoming Flutter Plugin](https://www.youtube.com/watch?v=SBaSpwXRz94)
 - [Running Offline LLMs such as Mistral 7B on Linux. Open-Source llama.cpp Wrapper for Flutter.](https://www.youtube.com/watch?v=LOTCvGnO7lg)
 
-## Werkloos
-
-A Dutch word that perfectly describes my current situation: unemployed. But using that word in English might've made you skip this section, yet here you are. I'm glad you're still reading.
-
-Recently, last September, the fintech startup I was working for had to shut down due to the challenging market conditions. While I'm currently looking for a new job, It's not easy to find a company that combines my passion for AI and Flutter.
-
-I've decided to take a leap of faith and work on this project untill I find a new job, or until I run out of money (Jan-Feb 2024). Whichever comes first. Perhaps I'll find a way to make this project sustainable, while keeping it open source. I'm just going with the flow.
-
 ## Friends of AubAI
 
 - [shady.ai](https://github.com/BrutalCoding/shady.ai) - The consumer-facing app that uses AubAI to run AI models locally. This is the app that I'm building to showcase AubAI's capabilities, and to make AI accessible to the masses.
 - [llama.cpp](https://github.com/ggerganov/llama.cpp) - C++ library for building and running AI models locally.
+- [sherpa-onnx](https://github.com/k2-fsa/sherpa-onnx) - Speech-to-text, text-to-speech, and speaker recongition using next-gen Kaldi with onnxruntime without Internet connection.
 - [Flutter Perth](https://www.meetup.com/Flutter-Perth/) - Perth's Flutter meetup group. I'm the organizer. Join my regular online meetups to learn more about Flutter and AI.

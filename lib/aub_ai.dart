@@ -8,6 +8,7 @@ import 'dart:math';
 import 'dart:typed_data';
 
 import 'package:aub_ai/data/prompt_template.dart';
+import 'package:aub_ai/services/tts_service.dart';
 import 'package:ffi/ffi.dart';
 import 'package:flutter/foundation.dart';
 
@@ -95,7 +96,13 @@ Stream<String> _generateResponse({
 
   final Pointer<Char> modelPath = filePathToModel.toNativeUtf8().cast<Char>();
   final llama_model_params llamaModelParams =
-      llamaCpp.llama_model_default_params();
+      llamaCpp.llama_model_default_params()
+        ..n_gpu_layers = 99
+        ..vocab_only = false
+        ..use_mmap = true
+        ..use_mlock = false
+        ..main_gpu = 0;
+
   final Pointer<llama_model> llamaModel = llamaCpp.llama_load_model_from_file(
     modelPath,
     llamaModelParams,
@@ -117,15 +124,16 @@ Stream<String> _generateResponse({
       promptTemplate.contextSize ?? llamaCtxDefaultParams.n_ctx;
   llamaCtxParamsPtr.ref.seed =
       promptTemplate.randomSeedNumber ?? llamaCtxDefaultParams.seed;
+
   llamaCtxParamsPtr.ref.n_threads_batch =
-      promptTemplate.cpuThreadsToUse ?? Platform.numberOfProcessors;
+      promptTemplate.cpuThreadsToUse ?? llamaCtxDefaultParams.n_threads_batch;
 
   // Dart gives us the number of total threads which is what we want.
   // For example, on a Apple MBP with M1 Pro, this will return 10 cores that
   // will be utilized by llama.cpp. At the time of writing, the default value
   // of n_threads that llama.cpp defaults to is 4.
   llamaCtxParamsPtr.ref.n_threads =
-      promptTemplate.cpuThreadsToUse ?? Platform.numberOfProcessors;
+      promptTemplate.cpuThreadsToUse ?? llamaCtxDefaultParams.n_threads;
 
   debugPrint(
       "[AUB.AI] Updated n_ctx from: ${llamaCtxDefaultParams.n_ctx} (default) -> ${llamaCtxParamsPtr.ref.n_ctx} (new)");
@@ -343,6 +351,109 @@ Stream<String> _generateResponse({
   yield _eosBrutalCodingHasSpoken;
 }
 
+// Still need to decide whether this function can be removed or not.
+// It's not used because of incompabilities with the c-api of sherpa-onnx for Android & iOS, this function was a nice try but I gave up eventually.
+// Sherpa-onnx does support the c-api for Linux, macOS and Windows. Once I get it working for Android & iOS, I'll see if desktop support works with this function.
+//
+// /// Sherpa-onnx
+// ///
+// /// [pathToOnnxModel]: The path to the ONNX model file (.onnx)
+// /// [pathToDataDirectory]: The directory that contains the data files (defaults to 'espeak-ng-data' relative to the .onnx model file)
+// /// [ruleFstPath]: The path to the rule FST file (defaults to '')
+// Pointer<SherpaOnnxOfflineTtsConfig> _getOfflineTtsConfig({
+//   required String pathToOnnxModel,
+//   // String? pathToDataDirectory,
+//   // String ruleFstPath = '',
+// }) {
+//   // TODO: Free the memory after use (outside of this function) (not done yet) (causes memory leak)
+//   final ttsConfigPointer = malloc<SherpaOnnxOfflineTtsConfig>();
+
+//   // Convert the Dart string to a Utf8 string and get a pointer to it
+//   ffi.Pointer<ffi.Char> pathPointer =
+//       pathToOnnxModel.toNativeUtf8().cast<ffi.Char>();
+
+//   // Get the directory of the model file
+//   // TODO: Due to sandboxing, we can't access the directory of the model file.
+//   // User should give path to the directory instead and we should cache that or at least make sure it's in an accessible location that can be seen while in a sandbox.
+//   final directory = File(pathToOnnxModel).parent.path;
+
+//   // This directory contains 'tokens.txt'.
+//   ffi.Pointer<ffi.Char> pathToTokensPointer = path
+//       .join(
+//         directory,
+//         'tokens.txt',
+//       )
+//       .toNativeUtf8()
+//       .cast<ffi.Char>();
+
+//   // The data_dir is usually 'espeak-ng-data' within the directory of the model
+//   // file.
+//   ffi.Pointer<ffi.Char> dataDirPointer = path
+//       .join(
+//         directory,
+//         'espeak-ng-data',
+//       )
+//       .toNativeUtf8()
+//       .cast<ffi.Char>();
+
+//   // Let's assign the values to the structs for the vits model config
+//   final vitsModelConfig = malloc<SherpaOnnxOfflineTtsVitsModelConfig>();
+//   vitsModelConfig.ref.model = pathPointer;
+//   vitsModelConfig.ref.tokens = pathToTokensPointer;
+//   vitsModelConfig.ref.data_dir = dataDirPointer;
+
+//   //
+//   // Now that vitsModelConfigRef is set, we can set modelConfigRef
+//   //
+//   // modelConfigRef depends on vitsModelConfig
+//   final ttsModelConfig = malloc<SherpaOnnxOfflineTtsModelConfig>();
+//   ttsModelConfig.ref.vits = vitsModelConfig.ref;
+//   ttsModelConfig.ref.num_threads = 2;
+//   ttsModelConfig.ref.debug = 0;
+//   ttsModelConfig.ref.provider = 'cpu'.toNativeUtf8().cast<ffi.Char>();
+
+//   //
+//   // Now that modelConfigRef is set, we can set ttsConfigRef
+//   //
+//   // ttsConfigRef depends on modelConfig
+//   final ttsConfigRef = ttsConfigPointer.ref;
+//   ttsConfigRef.model = ttsModelConfig.ref;
+
+//   ttsConfigRef.rule_fsts = "".toNativeUtf8().cast<ffi.Char>();
+
+//   // Print out all the values of the structs
+//   print("ttsConfigRef.model.num_threads: ${ttsConfigRef.model.num_threads}");
+//   print("ttsConfigRef.model.debug: ${ttsConfigRef.model.debug}");
+//   print("ttsConfigRef.model.provider: ${ttsConfigRef.model.provider}");
+//   print("ttsConfigRef.model.vits.model: ${ttsConfigRef.model.vits.model}");
+//   print("ttsConfigRef.model.vits.tokens: ${ttsConfigRef.model.vits.tokens}");
+//   print(
+//       "ttsConfigRef.model.vits.data_dir: ${ttsConfigRef.model.vits.data_dir}");
+//   print("ttsConfigRef.rule_fsts: ${ttsConfigRef.rule_fsts}");
+
+//   // For debugging, lets see what ttsConfigPointer is
+//   print("ttsConfigPointer: $ttsConfigPointer");
+
+//   // More debugging the pointer:
+//   print("ttsConfigPointer.ref: ${ttsConfigPointer.ref}");
+
+//   return ttsConfigPointer;
+// }
+
+/// Given a [text], generate audio from it and play it.
+/// WARNING: Only supports Android (ARM64_v8a) for now.
+void aubTextToSpeech({
+  required String text,
+}) async {
+  if (!Platform.isAndroid) {
+    debugPrint(
+      '[AUB.AI] Text-to-speech feature is still in development, and is not available for this platform yet.',
+    );
+    return;
+  }
+  TtsService.generateAndPlaySpeech(text);
+}
+
 OnTokenGeneratedCallback? _onTokenGenerated;
 
 /// This function is used to generate a response from the AI model.
@@ -384,10 +495,16 @@ Future<void> talkAsync({
 }
 
 /// The dynamic library in which the symbols for [AubAiBindings] can be found.
-final DynamicLibrary _dylib = () {
-  /// [libName] is basically the base name of the compiled file name that
-  /// contains the native functions. The file name is platform dependent.
-  const String libName = 'llama';
+/// [libName] Name of the library to load e.g. 'llama' which will load 'libllama.so' on Android, libllama.dylib on iOS and macOS, etc.
+/// Returns a [DynamicLibrary] that can be used to access the symbols in the library.
+DynamicLibrary _dylib(String libName) {
+  if (libName == '') {
+    // Load the default library
+    print(
+      'No library name provided. Is this intended? Falling back to DynamicLibrary.process(). Might fail to lookup symbols.',
+    );
+    return DynamicLibrary.process();
+  }
 
   // macOS (x86_64, ARM64)
   if (Platform.isMacOS) {
@@ -412,13 +529,13 @@ final DynamicLibrary _dylib = () {
   // Unsupported platform
   throw UnsupportedError('Sorry, your platform/OS is not supported. '
       'You are running: ${Platform.operatingSystem}');
-}();
+}
 
 /// The bindings to the native functions in [_dylib].
-final AubAiBindings _bindings = AubAiBindings(_dylib);
+final AubAiBindings _llamaBindings = AubAiBindings(_dylib('llama'));
 
-// Expose _bindings publicly:
-AubAiBindings get aubAiBindings => _bindings;
+// Expose _bindings publicly.
+AubAiBindings get aubAiBindings => _llamaBindings;
 
 /// This class is the input that will be processed by the AI model.
 /// Basically the prompt that the user wants to generate a response from.

@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'package:aub_ai/aub_ai.dart';
 import 'package:aub_ai/data/prompt_template.dart';
+import 'package:aub_ai/services/tts_service.dart';
 import 'package:chat_bubbles/chat_bubbles.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
@@ -34,8 +35,8 @@ class _MyAppState extends State<MyApp> {
   /// This text is used to show the response from the AI in the UI.
   TalkAsyncState talkAsyncState = TalkAsyncState.idle;
 
-  /// This file is used to store the path to the model file.
-  File? file;
+  /// This file is used to store the path to the gguf model file (.gguf) (serves LLM)
+  File? fileTextModel;
 
   /// Define ChatML as the default prompt template
   PromptTemplate promptTemplate = PromptTemplate.chatML();
@@ -43,6 +44,11 @@ class _MyAppState extends State<MyApp> {
   // This is the example system message that is used in the ChatML template.
   final String _chatMLTemplateSysExample =
       "You are a helpful assistant. Be concise and helpful. If you don't know the answer to a question, please don't share false information.";
+  @override
+  void initState() {
+    super.initState();
+    TtsService.initTts();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -62,18 +68,19 @@ class _MyAppState extends State<MyApp> {
         appBar: AppBar(
           actions: [
             IconButton(
-              onPressed: talkAsyncState == TalkAsyncState.idle && file != null
-                  ? () {
-                      setState(
-                        () {
-                          file = null;
-                          textControllerUserPrompt.clear();
-                          textControllerFullConversation.clear();
-                          talkAsyncState = TalkAsyncState.idle;
-                        },
-                      );
-                    }
-                  : null,
+              onPressed:
+                  talkAsyncState == TalkAsyncState.idle && fileTextModel != null
+                      ? () {
+                          setState(
+                            () {
+                              fileTextModel = null;
+                              textControllerUserPrompt.clear();
+                              textControllerFullConversation.clear();
+                              talkAsyncState = TalkAsyncState.idle;
+                            },
+                          );
+                        }
+                      : null,
               icon: const Icon(Icons.delete_outline),
               tooltip: 'Reset the conversation, pick a new model file',
             ),
@@ -150,7 +157,7 @@ class _MyAppState extends State<MyApp> {
                             },
                           )
                         : Center(
-                            child: file != null
+                            child: fileTextModel != null
                                 ? const Text(
                                     'Start a conversation by sending a prompt to the AI',
                                     textAlign: TextAlign.center,
@@ -165,7 +172,7 @@ class _MyAppState extends State<MyApp> {
                                       const Padding(
                                         padding: EdgeInsets.all(8.0),
                                         child: Text(
-                                          'In order to start, please select a model file from your device',
+                                          'Please provide a GGUF file to start a conversation.',
                                           textAlign: TextAlign.center,
                                           style: TextStyle(
                                             fontSize: 16,
@@ -184,26 +191,41 @@ class _MyAppState extends State<MyApp> {
                                           fontWeight: FontWeight.w300,
                                         ),
                                       ),
-                                      // Button to select a file
+                                      // Button to select a GGUF file
                                       Padding(
                                         padding: const EdgeInsets.all(8.0),
-                                        child: ElevatedButton(
-                                          onPressed: () async {
-                                            FilePickerResult? result =
-                                                await FilePicker.platform
-                                                    .pickFiles();
+                                        child: Opacity(
+                                          opacity:
+                                              fileTextModel == null ? 1 : 0.5,
+                                          child: ElevatedButton(
+                                            onLongPress: () {
+                                              // Clear fileTextModel
+                                              setState(() {
+                                                fileTextModel = null;
+                                              });
+                                            },
+                                            onPressed: fileTextModel == null
+                                                ? () async {
+                                                    FilePickerResult? result =
+                                                        await FilePicker
+                                                            .platform
+                                                            .pickFiles();
 
-                                            if (result == null) {
-                                              return;
-                                            }
+                                                    if (result == null) {
+                                                      return;
+                                                    }
 
-                                            final tmpFile =
-                                                File(result.files.single.path!);
-                                            setState(() {
-                                              file = tmpFile;
-                                            });
-                                          },
-                                          child: const Text('Pick a file'),
+                                                    final tmpFile = File(result
+                                                        .files.single.path!);
+                                                    setState(() {
+                                                      fileTextModel = tmpFile;
+                                                    });
+                                                  }
+                                                : null,
+                                            child: const Text(
+                                              'Pick text model (.gguf)',
+                                            ),
+                                          ),
                                         ),
                                       ),
                                     ],
@@ -221,7 +243,7 @@ class _MyAppState extends State<MyApp> {
                             onSubmitted: (_) => _sendPromptToAi(
                               textControllerUserPrompt.text,
                             ),
-                            enabled: file != null &&
+                            enabled: fileTextModel != null &&
                                 talkAsyncState == TalkAsyncState.idle,
                             decoration: const InputDecoration(
                               border: OutlineInputBorder(),
@@ -255,7 +277,7 @@ class _MyAppState extends State<MyApp> {
                                       ),
                                       minimumSize: const Size(0, 64),
                                     ),
-                                    onPressed: file != null &&
+                                    onPressed: fileTextModel != null &&
                                             talkAsyncState ==
                                                 TalkAsyncState.idle
                                         ? () => _sendPromptToAi(
@@ -304,7 +326,7 @@ class _MyAppState extends State<MyApp> {
   /// This function sends the prompt to the AI. It is called when the user
   /// presses the send button or when the user presses enter on the keyboard.
   Future<void> _sendPromptToAi(String userPrompt) async {
-    if (file == null || userPrompt.isEmpty) {
+    if (fileTextModel == null || userPrompt.isEmpty) {
       return;
     }
 
@@ -323,8 +345,6 @@ class _MyAppState extends State<MyApp> {
         label: 'ChatML',
         template:
             "${textControllerFullConversation.text}<|im_start|>user\n${textControllerUserPrompt.text}<|im_end|>\n<|im_start|>assistant",
-        contextSize: 4096,
-        randomSeedNumber: 42,
         eosToken: "<|im_end|>",
       );
     } else {
@@ -350,14 +370,17 @@ class _MyAppState extends State<MyApp> {
     });
 
     // A temporary variable to store the generated tokens.
-    String tmpGeneratedToken = '';
+    String tmpGeneratedTokensAll = '';
+    String tmpGeneratedTokensLastResponse = '';
+
     await talkAsync(
-      filePathToModel: file!.path,
+      filePathToModel: fileTextModel!.path,
       promptTemplate: tmpPromptTemplate,
       onTokenGenerated: (String token) {
-        tmpGeneratedToken += token;
-        if (tmpGeneratedToken.length >
+        tmpGeneratedTokensAll += token;
+        if (tmpGeneratedTokensAll.length >
             textControllerFullConversation.text.length) {
+          tmpGeneratedTokensLastResponse += token;
           if (talkAsyncState != TalkAsyncState.talking) {
             setState(() {
               talkAsyncState = TalkAsyncState.talking;
@@ -374,6 +397,19 @@ class _MyAppState extends State<MyApp> {
     textControllerUserPrompt.clear();
     textControllerFullConversation.text =
         textControllerFullConversation.text.trimLeft();
+
+    // To play the last response, we need to remove both the start and end tags
+    // from the last response before to play it using the TTS service.
+    final String lastChatMessageByAssistant = tmpGeneratedTokensLastResponse
+        .split('<|im_start|>assistant')
+        .last
+        .replaceAll(
+          '<|im_end|>',
+          '',
+        );
+
+    // Play the last response using the TTS service
+    aubTextToSpeech(text: lastChatMessageByAssistant);
 
     // Change the state back to idle when the AI is done talking
     setState(() {
