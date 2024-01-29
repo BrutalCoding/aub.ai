@@ -116,9 +116,9 @@ class MainActivity: FlutterActivity() {
         // Example 2:
         // https://github.com/k2-fsa/sherpa-onnx/releases/tag/tts-models
         // https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/vits-piper-en_US-amy-low.tar.bz2
-        modelDir = "vits-piper-en_US-hfc_male-medium"
-        modelName = "en_US-hfc_male-medium.onnx"
-        dataDir = "vits-piper-en_US-hfc_male-medium/espeak-ng-data"
+        modelDir = "vits-piper-en_US-libritts_r-medium"
+        modelName = "en_US-libritts_r-medium.onnx"
+        dataDir = "vits-piper-en_US-libritts_r-medium/espeak-ng-data"
 
         println("[AUB.AI] Loading model from $modelDir/$modelName")
 

@@ -17,19 +17,25 @@ Meet AubAI: a Flutter/Dart package designed specifically for empowering your app
 
 This package is a game-changer for all major platforms. But don't just take my word for it; see AubAI in action in my YouTube tutorials at [YouTube.com/@BrutalCoding](https://www.youtube.com/@BrutalCoding).
 
-AubAI is not only powerful and versatile but also user-friendly and open-source. It's time to unlock the full potential of your apps with the latest in gen-AI technology.
-
 ## Features and Capabilities
 
 ### Advanced Gen-AI Integration
 
+#### Available now
+
 - **Text Generation**: Harness the power of cutting-edge language models with AubAI for smooth text generation, elevating the user experience through advanced natural language processing. Effortlessly download and try out any GGUF model from sources such as [HuggingFace](https://huggingface.co/models?library=gguf), bringing top-tier AI functionality into your app with ease.
 
-- **Text-to-Speech (WIP)**: An initial text-to-speech feature is currently in development, a work in progress that will be available over time. Stay tuned for updates! Currently available to test in the [example app](./example/README.md) for Android ARM64_v8a only (e.g. Pixel 7).
+#### In development
+
+- **Text-to-Speech**: An initial text-to-speech feature is currently in development. Currently available to test in the [example app](./example/README.md) for Android ARM64_v8a only (e.g. Pixel 7).
+
+#### Queued for development
+
+- **Speech-to-Text**: An initial speech-to-text feature is currently in development. Not yet in the example app.
 
 ### Cross-Platform Compatibility
 
-- **Universal Platform Support**: AubAI is meticulously designed for Flutter, ensuring seamless operation across a multitude of platforms. This broad compatibility extends to various operating systems, catering to a diverse range of development needs:
+- **Universal Platform Support**: AubAI and Flutter are made for each other. Broad compatibility with various platforms:
 
   - macOS (ARM64, x86_64)
   - Windows (x86_64)
@@ -85,6 +91,8 @@ Make sure to to hit the "Star" button on this project if you like it. Perhaps on
 
 ## Setup
 
+### Text-to-text
+
 1. Add the following to your `pubspec.yaml` file:
 
 ```yaml
@@ -135,20 +143,43 @@ Future<void> example() async {
 }
 ```
 
-## Technical Details
+### Text-to-speech (WIP)
 
-AubAI is leveraging the power of [llama.cpp](https://github.com/ggerganov/llama.cpp). It's a C++ library that allows you to run AI models on your device. It's fast, it's lightweight, and it's open source. It's the perfect fit for AubAI.
+This is currently a work in progress. It's not ready for production use yet.
 
-While llama.cpp is a great library, it's not trivial to integrate it into a Flutter project. That's where AubAI comes in. It's a Flutter/Dart package that makes it easy to use llama.cpp in your Flutter project.
+Implementation is currently limited to  Android ARM64_v8a only (e.g. Pixel 7).
 
-The vision of AubAI is to make AI accessible to everyone, and AI is more than just generating text. That's why AubAI is designed to be modular. Over time, more AI capabilities will be added to AubAI such as image generation, voice generation, and more.
+Want to try it out? It's available to test in the [example app](./example).
+
+1. Follow the steps above for text-to-text.
+
+2. Download this voice model:
+
+```bash
+wget https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/vits-piper-en_US-libritts_r-medium.tar.bz2
+tar xf vits-piper-en_US-libritts_r-medium.tar.bz2
+```
+
+3. Unzip the file and make sure the folder name matches with the name in step 2.
+3.1. (Android) Move this voice model / folder to `android/src/main/assets`
+3.2. (Other platforms) Not yet supported.
+
+4. In your own Flutter project, or in the example app, make sure that `Tts.kt` is in the same folder as `MainActivity.kt`.
+
+Please note that this is a work in progress, therefore, expect bugs and other issues.
 
 ### Resources
 
-If you're looking for a model file, you can find a couple here:
-[HuggingFace.co](https://huggingface.co/models?library=gguf).
+#### GGUF Models (text-to-text)
 
-At the time of writing, there are over 2300 models available. Some of them might be very good with math, others with coding, and others with poetry and some are good at everything. It's up to you to find the model that suits your use case for your app, or let your users choose a model like I did in the [example app](./example/README.md).
+The links to GGUF models are provided below with the filter set to "GGUF", see URLs below. You can also use the search bar to find a model that suits your needs.
+
+- [HuggingFace.co](https://huggingface.co/models?library=gguf)
+- [HuggingFace.co > User > TheBloke](https://huggingface.co/TheBloke?search_models=gguf)
+
+#### Onnx Models (text-to-speech)
+
+- [GitHub.com > Sherpa Onnx > Releases > TTS Models](https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models)
 
 ## Disclaimer
 
