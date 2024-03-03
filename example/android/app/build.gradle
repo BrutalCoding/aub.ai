@@ -45,7 +45,7 @@ android {
         applicationId "com.brutalcoding.aubai"
         // You can update the following values to match your application needs.
         // For more information, see: https://docs.flutter.dev/deployment/android#reviewing-the-gradle-build-configuration.
-        minSdkVersion 28 // AubAI package requires a min. Android SDK version of 28 (default was: flutter.minSdkVersion)
+        minSdkVersion 21 // Synced with package 'aub.ai', which requires minSdkVersion stated here
         targetSdkVersion flutter.targetSdkVersion
         versionCode flutterVersionCode.toInteger()
         versionName flutterVersionName

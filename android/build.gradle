@@ -58,7 +58,7 @@ android {
     }
 
     defaultConfig {
-        minSdkVersion 28
+        minSdkVersion 21
     }
 
     // Loading LLM models into memory requires more memory than the default heap
