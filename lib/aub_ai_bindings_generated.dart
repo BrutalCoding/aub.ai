@@ -64,19 +64,29 @@ class AubAiBindings {
   /// Initialize the llama + ggml backend
   /// If numa is true, use NUMA optimizations
   /// Call once at the start of the program
-  void llama_backend_init(
-    bool numa,
+  void llama_backend_init() {
+    return _llama_backend_init();
+  }
+
+  late final _llama_backend_initPtr =
+      _lookup<ffi.NativeFunction<ffi.Void Function()>>('llama_backend_init');
+  late final _llama_backend_init =
+      _llama_backend_initPtr.asFunction<void Function()>();
+
+  /// optional:
+  void llama_numa_init(
+    int numa,
   ) {
-    return _llama_backend_init(
+    return _llama_numa_init(
       numa,
     );
   }
 
-  late final _llama_backend_initPtr =
-      _lookup<ffi.NativeFunction<ffi.Void Function(ffi.Bool)>>(
-          'llama_backend_init');
-  late final _llama_backend_init =
-      _llama_backend_initPtr.asFunction<void Function(bool)>();
+  late final _llama_numa_initPtr =
+      _lookup<ffi.NativeFunction<ffi.Void Function(ffi.Int32)>>(
+          'llama_numa_init');
+  late final _llama_numa_init =
+      _llama_numa_initPtr.asFunction<void Function(int)>();
 
   /// Call once at the end of the program - currently only used for MPI
   void llama_backend_free() {
@@ -168,27 +178,37 @@ class AubAiBindings {
   }
 
   late final _llama_max_devicesPtr =
-      _lookup<ffi.NativeFunction<ffi.Int32 Function()>>('llama_max_devices');
+      _lookup<ffi.NativeFunction<ffi.Size Function()>>('llama_max_devices');
   late final _llama_max_devices =
       _llama_max_devicesPtr.asFunction<int Function()>();
 
-  bool llama_mmap_supported() {
-    return _llama_mmap_supported();
+  bool llama_supports_mmap() {
+    return _llama_supports_mmap();
   }
 
-  late final _llama_mmap_supportedPtr =
-      _lookup<ffi.NativeFunction<ffi.Bool Function()>>('llama_mmap_supported');
-  late final _llama_mmap_supported =
-      _llama_mmap_supportedPtr.asFunction<bool Function()>();
+  late final _llama_supports_mmapPtr =
+      _lookup<ffi.NativeFunction<ffi.Bool Function()>>('llama_supports_mmap');
+  late final _llama_supports_mmap =
+      _llama_supports_mmapPtr.asFunction<bool Function()>();
 
-  bool llama_mlock_supported() {
-    return _llama_mlock_supported();
+  bool llama_supports_mlock() {
+    return _llama_supports_mlock();
   }
 
-  late final _llama_mlock_supportedPtr =
-      _lookup<ffi.NativeFunction<ffi.Bool Function()>>('llama_mlock_supported');
-  late final _llama_mlock_supported =
-      _llama_mlock_supportedPtr.asFunction<bool Function()>();
+  late final _llama_supports_mlockPtr =
+      _lookup<ffi.NativeFunction<ffi.Bool Function()>>('llama_supports_mlock');
+  late final _llama_supports_mlock =
+      _llama_supports_mlockPtr.asFunction<bool Function()>();
+
+  bool llama_supports_gpu_offload() {
+    return _llama_supports_gpu_offload();
+  }
+
+  late final _llama_supports_gpu_offloadPtr =
+      _lookup<ffi.NativeFunction<ffi.Bool Function()>>(
+          'llama_supports_gpu_offload');
+  late final _llama_supports_gpu_offload =
+      _llama_supports_gpu_offloadPtr.asFunction<bool Function()>();
 
   ffi.Pointer<llama_model> llama_get_model(
     ffi.Pointer<llama_context> ctx,
@@ -246,6 +266,20 @@ class AubAiBindings {
           'llama_vocab_type');
   late final _llama_vocab_type1 = _llama_vocab_type1Ptr
       .asFunction<int Function(ffi.Pointer<llama_model>)>();
+
+  int llama_rope_type1(
+    ffi.Pointer<llama_model> model,
+  ) {
+    return _llama_rope_type1(
+      model,
+    );
+  }
+
+  late final _llama_rope_type1Ptr =
+      _lookup<ffi.NativeFunction<ffi.Int32 Function(ffi.Pointer<llama_model>)>>(
+          'llama_rope_type');
+  late final _llama_rope_type1 =
+      _llama_rope_type1Ptr.asFunction<int Function(ffi.Pointer<llama_model>)>();
 
   int llama_n_vocab(
     ffi.Pointer<llama_model> model,
@@ -494,35 +528,6 @@ class AubAiBindings {
   /// The model needs to be reloaded before applying a new adapter, otherwise the adapter
   /// will be applied on top of the previous one
   /// Returns 0 on success
-  int llama_apply_lora_from_file(
-    ffi.Pointer<llama_context> ctx,
-    ffi.Pointer<ffi.Char> path_lora,
-    double scale,
-    ffi.Pointer<ffi.Char> path_base_model,
-    int n_threads,
-  ) {
-    return _llama_apply_lora_from_file(
-      ctx,
-      path_lora,
-      scale,
-      path_base_model,
-      n_threads,
-    );
-  }
-
-  late final _llama_apply_lora_from_filePtr = _lookup<
-      ffi.NativeFunction<
-          ffi.Int32 Function(
-              ffi.Pointer<llama_context>,
-              ffi.Pointer<ffi.Char>,
-              ffi.Float,
-              ffi.Pointer<ffi.Char>,
-              ffi.Int32)>>('llama_apply_lora_from_file');
-  late final _llama_apply_lora_from_file =
-      _llama_apply_lora_from_filePtr.asFunction<
-          int Function(ffi.Pointer<llama_context>, ffi.Pointer<ffi.Char>,
-              double, ffi.Pointer<ffi.Char>, int)>();
-
   int llama_model_apply_lora_from_file(
     ffi.Pointer<llama_model> model,
     ffi.Pointer<ffi.Char> path_lora,
@@ -725,17 +730,19 @@ class AubAiBindings {
       .asFunction<void Function(ffi.Pointer<llama_context>, int)>();
 
   /// Adds relative position "delta" to all tokens that belong to the specified sequence and have positions in [p0, p1)
-  /// If the KV cache is RoPEd, the KV data is updated accordingly
+  /// If the KV cache is RoPEd, the KV data is updated accordingly:
+  /// - lazily on next llama_decode()
+  /// - explicitly with llama_kv_cache_update()
   /// p0 < 0 : [0,  p1]
   /// p1 < 0 : [p0, inf)
-  void llama_kv_cache_seq_shift(
+  void llama_kv_cache_seq_add(
     ffi.Pointer<llama_context> ctx,
     int seq_id,
     int p0,
     int p1,
     int delta,
   ) {
-    return _llama_kv_cache_seq_shift(
+    return _llama_kv_cache_seq_add(
       ctx,
       seq_id,
       p0,
@@ -744,16 +751,17 @@ class AubAiBindings {
     );
   }
 
-  late final _llama_kv_cache_seq_shiftPtr = _lookup<
+  late final _llama_kv_cache_seq_addPtr = _lookup<
       ffi.NativeFunction<
           ffi.Void Function(ffi.Pointer<llama_context>, llama_seq_id, llama_pos,
-              llama_pos, llama_pos)>>('llama_kv_cache_seq_shift');
-  late final _llama_kv_cache_seq_shift =
-      _llama_kv_cache_seq_shiftPtr.asFunction<
-          void Function(ffi.Pointer<llama_context>, int, int, int, int)>();
+              llama_pos, llama_pos)>>('llama_kv_cache_seq_add');
+  late final _llama_kv_cache_seq_add = _llama_kv_cache_seq_addPtr.asFunction<
+      void Function(ffi.Pointer<llama_context>, int, int, int, int)>();
 
   /// Integer division of the positions by factor of `d > 1`
-  /// If the KV cache is RoPEd, the KV data is updated accordingly
+  /// If the KV cache is RoPEd, the KV data is updated accordingly:
+  /// - lazily on next llama_decode()
+  /// - explicitly with llama_kv_cache_update()
   /// p0 < 0 : [0,  p1]
   /// p1 < 0 : [p0, inf)
   void llama_kv_cache_seq_div(
@@ -778,6 +786,57 @@ class AubAiBindings {
               llama_pos, ffi.Int)>>('llama_kv_cache_seq_div');
   late final _llama_kv_cache_seq_div = _llama_kv_cache_seq_divPtr.asFunction<
       void Function(ffi.Pointer<llama_context>, int, int, int, int)>();
+
+  /// Returns the largest position present in the KV cache for the specified sequence
+  int llama_kv_cache_seq_pos_max(
+    ffi.Pointer<llama_context> ctx,
+    int seq_id,
+  ) {
+    return _llama_kv_cache_seq_pos_max(
+      ctx,
+      seq_id,
+    );
+  }
+
+  late final _llama_kv_cache_seq_pos_maxPtr = _lookup<
+      ffi.NativeFunction<
+          llama_pos Function(ffi.Pointer<llama_context>,
+              llama_seq_id)>>('llama_kv_cache_seq_pos_max');
+  late final _llama_kv_cache_seq_pos_max = _llama_kv_cache_seq_pos_maxPtr
+      .asFunction<int Function(ffi.Pointer<llama_context>, int)>();
+
+  /// Defragment the KV cache
+  /// This will be applied:
+  /// - lazily on next llama_decode()
+  /// - explicitly with llama_kv_cache_update()
+  void llama_kv_cache_defrag(
+    ffi.Pointer<llama_context> ctx,
+  ) {
+    return _llama_kv_cache_defrag(
+      ctx,
+    );
+  }
+
+  late final _llama_kv_cache_defragPtr = _lookup<
+          ffi.NativeFunction<ffi.Void Function(ffi.Pointer<llama_context>)>>(
+      'llama_kv_cache_defrag');
+  late final _llama_kv_cache_defrag = _llama_kv_cache_defragPtr
+      .asFunction<void Function(ffi.Pointer<llama_context>)>();
+
+  /// Apply the KV cache updates (such as K-shifts, defragmentation, etc.)
+  void llama_kv_cache_update(
+    ffi.Pointer<llama_context> ctx,
+  ) {
+    return _llama_kv_cache_update(
+      ctx,
+    );
+  }
+
+  late final _llama_kv_cache_updatePtr = _lookup<
+          ffi.NativeFunction<ffi.Void Function(ffi.Pointer<llama_context>)>>(
+      'llama_kv_cache_update');
+  late final _llama_kv_cache_update = _llama_kv_cache_updatePtr
+      .asFunction<void Function(ffi.Pointer<llama_context>)>();
 
   /// Returns the maximum size in bytes of the state (rng, logits, embedding
   /// and kv_cache) - will often be smaller after compacting tokens
@@ -884,57 +943,6 @@ class AubAiBindings {
   late final _llama_save_session_file = _llama_save_session_filePtr.asFunction<
       bool Function(ffi.Pointer<llama_context>, ffi.Pointer<ffi.Char>,
           ffi.Pointer<llama_token>, int)>();
-
-  /// Run the llama inference to obtain the logits and probabilities for the next token(s).
-  /// tokens + n_tokens is the provided batch of new tokens to process
-  /// n_past is the number of tokens to use from previous eval calls
-  /// Returns 0 on success
-  /// DEPRECATED: use llama_decode() instead
-  int llama_eval(
-    ffi.Pointer<llama_context> ctx,
-    ffi.Pointer<llama_token> tokens,
-    int n_tokens,
-    int n_past,
-  ) {
-    return _llama_eval(
-      ctx,
-      tokens,
-      n_tokens,
-      n_past,
-    );
-  }
-
-  late final _llama_evalPtr = _lookup<
-      ffi.NativeFunction<
-          ffi.Int Function(ffi.Pointer<llama_context>, ffi.Pointer<llama_token>,
-              ffi.Int32, ffi.Int32)>>('llama_eval');
-  late final _llama_eval = _llama_evalPtr.asFunction<
-      int Function(
-          ffi.Pointer<llama_context>, ffi.Pointer<llama_token>, int, int)>();
-
-  /// Same as llama_eval, but use float matrix input directly.
-  /// DEPRECATED: use llama_decode() instead
-  int llama_eval_embd(
-    ffi.Pointer<llama_context> ctx,
-    ffi.Pointer<ffi.Float> embd,
-    int n_tokens,
-    int n_past,
-  ) {
-    return _llama_eval_embd(
-      ctx,
-      embd,
-      n_tokens,
-      n_past,
-    );
-  }
-
-  late final _llama_eval_embdPtr = _lookup<
-      ffi.NativeFunction<
-          ffi.Int Function(ffi.Pointer<llama_context>, ffi.Pointer<ffi.Float>,
-              ffi.Int32, ffi.Int32)>>('llama_eval_embd');
-  late final _llama_eval_embd = _llama_eval_embdPtr.asFunction<
-      int Function(
-          ffi.Pointer<llama_context>, ffi.Pointer<ffi.Float>, int, int)>();
 
   /// Return batch for single sequence of tokens starting at pos_0
   ///
@@ -1044,7 +1052,29 @@ class AubAiBindings {
   late final _llama_set_n_threads = _llama_set_n_threadsPtr
       .asFunction<void Function(ffi.Pointer<llama_context>, int, int)>();
 
-  /// Token logits obtained from the last call to llama_eval()
+  /// Set abort callback
+  void llama_set_abort_callback(
+    ffi.Pointer<llama_context> ctx,
+    ggml_abort_callback abort_callback,
+    ffi.Pointer<ffi.Void> abort_callback_data,
+  ) {
+    return _llama_set_abort_callback(
+      ctx,
+      abort_callback,
+      abort_callback_data,
+    );
+  }
+
+  late final _llama_set_abort_callbackPtr = _lookup<
+      ffi.NativeFunction<
+          ffi.Void Function(ffi.Pointer<llama_context>, ggml_abort_callback,
+              ffi.Pointer<ffi.Void>)>>('llama_set_abort_callback');
+  late final _llama_set_abort_callback =
+      _llama_set_abort_callbackPtr.asFunction<
+          void Function(ffi.Pointer<llama_context>, ggml_abort_callback,
+              ffi.Pointer<ffi.Void>)>();
+
+  /// Token logits obtained from the last call to llama_decode()
   /// The logits for the last token are stored in the last row
   /// Logits for which llama_batch.logits[i] == 0 are undefined
   /// Rows: n_tokens provided with llama_batch
@@ -1099,6 +1129,26 @@ class AubAiBindings {
               ffi.Pointer<llama_context>)>>('llama_get_embeddings');
   late final _llama_get_embeddings = _llama_get_embeddingsPtr.asFunction<
       ffi.Pointer<ffi.Float> Function(ffi.Pointer<llama_context>)>();
+
+  /// Get the embeddings for the ith sequence
+  /// llama_get_embeddings(ctx) + i*n_embd
+  ffi.Pointer<ffi.Float> llama_get_embeddings_ith(
+    ffi.Pointer<llama_context> ctx,
+    int i,
+  ) {
+    return _llama_get_embeddings_ith(
+      ctx,
+      i,
+    );
+  }
+
+  late final _llama_get_embeddings_ithPtr = _lookup<
+      ffi.NativeFunction<
+          ffi.Pointer<ffi.Float> Function(ffi.Pointer<llama_context>,
+              ffi.Int32)>>('llama_get_embeddings_ith');
+  late final _llama_get_embeddings_ith =
+      _llama_get_embeddings_ithPtr.asFunction<
+          ffi.Pointer<ffi.Float> Function(ffi.Pointer<llama_context>, int)>();
 
   /// Vocab
   ffi.Pointer<ffi.Char> llama_token_get_text(
@@ -1348,6 +1398,57 @@ class AubAiBindings {
       int Function(
           ffi.Pointer<llama_model>, int, ffi.Pointer<ffi.Char>, int)>();
 
+  /// Apply chat template. Inspired by hf apply_chat_template() on python.
+  /// Both "model" and "custom_template" are optional, but at least one is required. "custom_template" has higher precedence than "model"
+  /// NOTE: This function does not use a jinja parser. It only support a pre-defined list of template. See more: https://github.com/ggerganov/llama.cpp/wiki/Templates-supported-by-llama_chat_apply_template
+  /// @param tmpl A Jinja template to use for this chat. If this is nullptr, the model’s default chat template will be used instead.
+  /// @param chat Pointer to a list of multiple llama_chat_message
+  /// @param n_msg Number of llama_chat_message in this chat
+  /// @param add_ass Whether to end the prompt with the token(s) that indicate the start of an assistant message.
+  /// @param buf A buffer to hold the output formatted prompt. The recommended alloc size is 2 * (total number of characters of all messages)
+  /// @param length The size of the allocated buffer
+  /// @return The total number of bytes of the formatted prompt. If is it larger than the size of buffer, you may need to re-alloc it and then re-apply the template.
+  int llama_chat_apply_template(
+    ffi.Pointer<llama_model> model,
+    ffi.Pointer<ffi.Char> tmpl,
+    ffi.Pointer<llama_chat_message> chat,
+    int n_msg,
+    bool add_ass,
+    ffi.Pointer<ffi.Char> buf,
+    int length,
+  ) {
+    return _llama_chat_apply_template(
+      model,
+      tmpl,
+      chat,
+      n_msg,
+      add_ass,
+      buf,
+      length,
+    );
+  }
+
+  late final _llama_chat_apply_templatePtr = _lookup<
+      ffi.NativeFunction<
+          ffi.Int32 Function(
+              ffi.Pointer<llama_model>,
+              ffi.Pointer<ffi.Char>,
+              ffi.Pointer<llama_chat_message>,
+              ffi.Size,
+              ffi.Bool,
+              ffi.Pointer<ffi.Char>,
+              ffi.Int32)>>('llama_chat_apply_template');
+  late final _llama_chat_apply_template =
+      _llama_chat_apply_templatePtr.asFunction<
+          int Function(
+              ffi.Pointer<llama_model>,
+              ffi.Pointer<ffi.Char>,
+              ffi.Pointer<llama_chat_message>,
+              int,
+              bool,
+              ffi.Pointer<ffi.Char>,
+              int)>();
+
   /// Grammar
   ffi.Pointer<llama_grammar> llama_grammar_init(
     ffi.Pointer<ffi.Pointer<llama_grammar_element>> rules,
@@ -1490,35 +1591,6 @@ class AubAiBindings {
       _llama_sample_apply_guidancePtr.asFunction<
           void Function(ffi.Pointer<llama_context>, ffi.Pointer<ffi.Float>,
               ffi.Pointer<ffi.Float>, double)>();
-
-  void llama_sample_classifier_free_guidance(
-    ffi.Pointer<llama_context> ctx,
-    ffi.Pointer<llama_token_data_array> candidates,
-    ffi.Pointer<llama_context> guidance_ctx,
-    double scale,
-  ) {
-    return _llama_sample_classifier_free_guidance(
-      ctx,
-      candidates,
-      guidance_ctx,
-      scale,
-    );
-  }
-
-  late final _llama_sample_classifier_free_guidancePtr = _lookup<
-      ffi.NativeFunction<
-          ffi.Void Function(
-              ffi.Pointer<llama_context>,
-              ffi.Pointer<llama_token_data_array>,
-              ffi.Pointer<llama_context>,
-              ffi.Float)>>('llama_sample_classifier_free_guidance');
-  late final _llama_sample_classifier_free_guidance =
-      _llama_sample_classifier_free_guidancePtr.asFunction<
-          void Function(
-              ffi.Pointer<llama_context>,
-              ffi.Pointer<llama_token_data_array>,
-              ffi.Pointer<llama_context>,
-              double)>();
 
   /// @details Sorts candidate tokens by their logits in descending order and calculate probabilities based on logits.
   void llama_sample_softmax(
@@ -1669,6 +1741,35 @@ class AubAiBindings {
       void Function(ffi.Pointer<llama_context>,
           ffi.Pointer<llama_token_data_array>, double, int)>();
 
+  /// @details Dynamic temperature implementation described in the paper https://arxiv.org/abs/2309.02772.
+  void llama_sample_entropy(
+    ffi.Pointer<llama_context> ctx,
+    ffi.Pointer<llama_token_data_array> candidates_p,
+    double min_temp,
+    double max_temp,
+    double exponent_val,
+  ) {
+    return _llama_sample_entropy(
+      ctx,
+      candidates_p,
+      min_temp,
+      max_temp,
+      exponent_val,
+    );
+  }
+
+  late final _llama_sample_entropyPtr = _lookup<
+      ffi.NativeFunction<
+          ffi.Void Function(
+              ffi.Pointer<llama_context>,
+              ffi.Pointer<llama_token_data_array>,
+              ffi.Float,
+              ffi.Float,
+              ffi.Float)>>('llama_sample_entropy');
+  late final _llama_sample_entropy = _llama_sample_entropyPtr.asFunction<
+      void Function(ffi.Pointer<llama_context>,
+          ffi.Pointer<llama_token_data_array>, double, double, double)>();
+
   void llama_sample_temp(
     ffi.Pointer<llama_context> ctx,
     ffi.Pointer<llama_token_data_array> candidates,
@@ -1690,29 +1791,6 @@ class AubAiBindings {
   late final _llama_sample_temp = _llama_sample_tempPtr.asFunction<
       void Function(ffi.Pointer<llama_context>,
           ffi.Pointer<llama_token_data_array>, double)>();
-
-  void llama_sample_temperature(
-    ffi.Pointer<llama_context> ctx,
-    ffi.Pointer<llama_token_data_array> candidates,
-    double temp,
-  ) {
-    return _llama_sample_temperature(
-      ctx,
-      candidates,
-      temp,
-    );
-  }
-
-  late final _llama_sample_temperaturePtr = _lookup<
-      ffi.NativeFunction<
-          ffi.Void Function(
-              ffi.Pointer<llama_context>,
-              ffi.Pointer<llama_token_data_array>,
-              ffi.Float)>>('llama_sample_temperature');
-  late final _llama_sample_temperature =
-      _llama_sample_temperaturePtr.asFunction<
-          void Function(ffi.Pointer<llama_context>,
-              ffi.Pointer<llama_token_data_array>, double)>();
 
   /// @details Apply constraints from grammar
   void llama_sample_grammar(
@@ -3149,6 +3227,18 @@ abstract class llama_vocab_type {
 
   /// Byte Pair Encoding
   static const int LLAMA_VOCAB_TYPE_BPE = 1;
+
+  /// WordPiece
+  static const int LLAMA_VOCAB_TYPE_WPM = 2;
+}
+
+/// note: these values should be synchronized with ggml_rope
+/// TODO: maybe move this enum to ggml.h (ggml_rope_type)
+abstract class llama_rope_type {
+  static const int LLAMA_ROPE_TYPE_NONE = -1;
+  static const int LLAMA_ROPE_TYPE_NORM = 0;
+  static const int LLAMA_ROPE_TYPE_NEOX = 2;
+  static const int LLAMA_ROPE_TYPE_GLM = 4;
 }
 
 abstract class llama_token_type {
@@ -3222,27 +3312,60 @@ abstract class llama_ftype {
   /// except 1d tensors
   static const int LLAMA_FTYPE_MOSTLY_Q2_K_S = 21;
 
+  /// except 1d tensors
+  static const int LLAMA_FTYPE_MOSTLY_IQ3_XS = 22;
+
+  /// except 1d tensors
+  static const int LLAMA_FTYPE_MOSTLY_IQ3_XXS = 23;
+
+  /// except 1d tensors
+  static const int LLAMA_FTYPE_MOSTLY_IQ1_S = 24;
+
+  /// except 1d tensors
+  static const int LLAMA_FTYPE_MOSTLY_IQ4_NL = 25;
+
+  /// except 1d tensors
+  static const int LLAMA_FTYPE_MOSTLY_IQ3_S = 26;
+
+  /// except 1d tensors
+  static const int LLAMA_FTYPE_MOSTLY_IQ3_M = 27;
+
+  /// except 1d tensors
+  static const int LLAMA_FTYPE_MOSTLY_IQ2_S = 28;
+
+  /// except 1d tensors
+  static const int LLAMA_FTYPE_MOSTLY_IQ2_M = 29;
+
+  /// except 1d tensors
+  static const int LLAMA_FTYPE_MOSTLY_IQ4_XS = 30;
+
   /// not specified in the model file
   static const int LLAMA_FTYPE_GUESSED = 1024;
 }
 
 abstract class llama_rope_scaling_type {
-  static const int LLAMA_ROPE_SCALING_UNSPECIFIED = -1;
-  static const int LLAMA_ROPE_SCALING_NONE = 0;
-  static const int LLAMA_ROPE_SCALING_LINEAR = 1;
-  static const int LLAMA_ROPE_SCALING_YARN = 2;
-  static const int LLAMA_ROPE_SCALING_MAX_VALUE = 2;
+  static const int LLAMA_ROPE_SCALING_TYPE_UNSPECIFIED = -1;
+  static const int LLAMA_ROPE_SCALING_TYPE_NONE = 0;
+  static const int LLAMA_ROPE_SCALING_TYPE_LINEAR = 1;
+  static const int LLAMA_ROPE_SCALING_TYPE_YARN = 2;
+  static const int LLAMA_ROPE_SCALING_TYPE_MAX_VALUE = 2;
+}
+
+abstract class llama_pooling_type {
+  static const int LLAMA_POOLING_TYPE_NONE = 0;
+  static const int LLAMA_POOLING_TYPE_MEAN = 1;
+  static const int LLAMA_POOLING_TYPE_CLS = 2;
 }
 
 abstract class llama_split_mode {
   /// single GPU
-  static const int LLAMA_SPLIT_NONE = 0;
+  static const int LLAMA_SPLIT_MODE_NONE = 0;
 
   /// split layers and KV across GPUs
-  static const int LLAMA_SPLIT_LAYER = 1;
+  static const int LLAMA_SPLIT_MODE_LAYER = 1;
 
   /// split rows across GPUs
-  static const int LLAMA_SPLIT_ROW = 2;
+  static const int LLAMA_SPLIT_MODE_ROW = 2;
 }
 
 final class llama_token_data extends ffi.Struct {
@@ -3316,9 +3439,9 @@ typedef llama_seq_id = ffi.Int32;
 typedef Dartllama_seq_id = int;
 
 abstract class llama_model_kv_override_type {
-  static const int LLAMA_KV_OVERRIDE_INT = 0;
-  static const int LLAMA_KV_OVERRIDE_FLOAT = 1;
-  static const int LLAMA_KV_OVERRIDE_BOOL = 2;
+  static const int LLAMA_KV_OVERRIDE_TYPE_INT = 0;
+  static const int LLAMA_KV_OVERRIDE_TYPE_FLOAT = 1;
+  static const int LLAMA_KV_OVERRIDE_TYPE_BOOL = 2;
 }
 
 final class llama_model_kv_override extends ffi.Struct {
@@ -3358,7 +3481,7 @@ final class llama_model_params extends ffi.Struct {
   @ffi.Int32()
   external int main_gpu;
 
-  /// proportion of the model (layers or rows) to offload to each GPU, size: LLAMA_MAX_DEVICES
+  /// proportion of the model (layers or rows) to offload to each GPU, size: llama_max_devices()
   external ffi.Pointer<ffi.Float> tensor_split;
 
   /// Called with a progress value between 0.0 and 1.0. Pass NULL to disable.
@@ -3414,7 +3537,7 @@ final class llama_context_params extends ffi.Struct {
   external int n_threads_batch;
 
   /// RoPE scaling type, from `enum llama_rope_scaling_type`
-  @ffi.Int8()
+  @ffi.Int32()
   external int rope_scaling_type;
 
   /// RoPE base frequency, 0 = from model
@@ -3445,6 +3568,10 @@ final class llama_context_params extends ffi.Struct {
   @ffi.Uint32()
   external int yarn_orig_ctx;
 
+  /// defragment the KV cache if holes/size > thold, < 0 disabled (default)
+  @ffi.Float()
+  external double defrag_thold;
+
   external ggml_backend_sched_eval_callback cb_eval;
 
   external ffi.Pointer<ffi.Void> cb_eval_user_data;
@@ -3457,11 +3584,7 @@ final class llama_context_params extends ffi.Struct {
   @ffi.Int32()
   external int type_v;
 
-  /// if true, use experimental mul_mat_q kernels (DEPRECATED - always true)
-  @ffi.Bool()
-  external bool mul_mat_q;
-
-  /// the llama_eval() call computes all logits, not just the last one (DEPRECATED - set llama_batch.logits instead)
+  /// the llama_decode() call computes all logits, not just the last one (DEPRECATED - set llama_batch.logits instead)
   @ffi.Bool()
   external bool logits_all;
 
@@ -3472,6 +3595,17 @@ final class llama_context_params extends ffi.Struct {
   /// whether to offload the KQV ops (including the KV cache) to GPU
   @ffi.Bool()
   external bool offload_kqv;
+
+  /// whether to pool (sum) embedding results by sequence id (ignored if no pooling layer)
+  @ffi.Bool()
+  external bool do_pooling;
+
+  /// Abort callback
+  /// if it returns true, execution of llama_decode() will be aborted
+  /// currently works only with CPU execution
+  external ggml_abort_callback abort_callback;
+
+  external ffi.Pointer<ffi.Void> abort_callback_data;
 }
 
 /// when ask == true, the scheduler wants to know if the user wants to observe this node
@@ -3515,8 +3649,8 @@ final class ggml_tensor extends ffi.Struct {
   @ffi.Array.multi([16])
   external ffi.Array<ffi.Int32> op_params;
 
-  @ffi.Bool()
-  external bool is_param;
+  @ffi.Int32()
+  external int flags;
 
   external ffi.Pointer<ggml_tensor> grad;
 
@@ -3572,16 +3706,22 @@ abstract class ggml_type {
   static const int GGML_TYPE_Q8_K = 15;
   static const int GGML_TYPE_IQ2_XXS = 16;
   static const int GGML_TYPE_IQ2_XS = 17;
-  static const int GGML_TYPE_I8 = 18;
-  static const int GGML_TYPE_I16 = 19;
-  static const int GGML_TYPE_I32 = 20;
-  static const int GGML_TYPE_COUNT = 21;
+  static const int GGML_TYPE_IQ3_XXS = 18;
+  static const int GGML_TYPE_IQ1_S = 19;
+  static const int GGML_TYPE_IQ4_NL = 20;
+  static const int GGML_TYPE_IQ3_S = 21;
+  static const int GGML_TYPE_IQ2_S = 22;
+  static const int GGML_TYPE_IQ4_XS = 23;
+  static const int GGML_TYPE_I8 = 24;
+  static const int GGML_TYPE_I16 = 25;
+  static const int GGML_TYPE_I32 = 26;
+  static const int GGML_TYPE_COUNT = 27;
 }
 
 abstract class ggml_backend_type {
-  static const int GGML_BACKEND_CPU = 0;
-  static const int GGML_BACKEND_GPU = 10;
-  static const int GGML_BACKEND_GPU_SPLIT = 20;
+  static const int GGML_BACKEND_TYPE_CPU = 0;
+  static const int GGML_BACKEND_TYPE_GPU = 10;
+  static const int GGML_BACKEND_TYPE_GPU_SPLIT = 20;
 }
 
 final class ggml_backend_buffer extends ffi.Opaque {}
@@ -3666,6 +3806,16 @@ abstract class ggml_op {
   static const int GGML_OP_CROSS_ENTROPY_LOSS_BACK = 71;
   static const int GGML_OP_COUNT = 72;
 }
+
+/// Abort callback
+/// If not NULL, called before ggml computation
+/// If it returns true, the computation is aborted
+typedef ggml_abort_callback
+    = ffi.Pointer<ffi.NativeFunction<ggml_abort_callbackFunction>>;
+typedef ggml_abort_callbackFunction = ffi.Bool Function(
+    ffi.Pointer<ffi.Void> data);
+typedef Dartggml_abort_callbackFunction = bool Function(
+    ffi.Pointer<ffi.Void> data);
 
 /// model quantization parameters
 final class llama_model_quantize_params extends ffi.Struct {
@@ -3763,6 +3913,23 @@ final class llama_timings extends ffi.Struct {
 
   @ffi.Int32()
   external int n_eval;
+}
+
+/// used in chat template
+final class llama_chat_message extends ffi.Struct {
+  external ffi.Pointer<ffi.Char> role;
+
+  external ffi.Pointer<ffi.Char> content;
+}
+
+/// numa strategies
+abstract class ggml_numa_strategy {
+  static const int GGML_NUMA_STRATEGY_DISABLED = 0;
+  static const int GGML_NUMA_STRATEGY_DISTRIBUTE = 1;
+  static const int GGML_NUMA_STRATEGY_ISOLATE = 2;
+  static const int GGML_NUMA_STRATEGY_NUMACTL = 3;
+  static const int GGML_NUMA_STRATEGY_MIRROR = 4;
+  static const int GGML_NUMA_STRATEGY_COUNT = 5;
 }
 
 /// Information associated with an individual cell in the KV cache view.
@@ -4381,8 +4548,6 @@ typedef SherpaOnnxGeneratedAudioCallbackFunction = ffi.Void Function(
     ffi.Pointer<ffi.Float> samples, ffi.Int32 n);
 typedef DartSherpaOnnxGeneratedAudioCallbackFunction = void Function(
     ffi.Pointer<ffi.Float> samples, int n);
-
-const int LLAMA_MAX_DEVICES = 1;
 
 const int LLAMA_DEFAULT_SEED = 4294967295;
 

@@ -18,8 +18,19 @@ fi
 
 # Run git submodule update to get the latest version of llama.cpp
 echo "[AUB.AI] Updating git submodules..."
-git submodule init
-git submodule update
+echo "[AUB.AI] Fetching the latest version of llama.cpp..."
+cd src/llama.cpp || exit
+git pull origin master
+git checkout master
+cd ../..
+
+echo "[AUB.AI] Fetching the latest version of sherpa-onnx..."
+cd src/sherpa-onnx || exit
+git pull origin main
+git checkout main
+cd ../..
+
+echo "[AUB.AI] Finished updating git submodules."
 
 # Flutter related
 flutter clean
