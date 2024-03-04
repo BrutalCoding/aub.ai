@@ -22,10 +22,10 @@ if [ ! -f "pubspec.yaml" ]; then
     exit 1
 fi
 
-# Run git submodule update to get the latest version of llama.cpp
-echo "[AUB.AI] Updating git submodules..."
-git submodule init
-git submodule update
+# Run autoupdate_git_submodules.sh
+echo "[AUB.AI] Running autoupdate_git_submodules.sh..."
+chmod +x brutalcoding_scripts/autoupdate_git_submodules.sh
+./brutalcoding_scripts/autoupdate_git_submodules.sh || exit
 
 # Flutter related
 flutter clean

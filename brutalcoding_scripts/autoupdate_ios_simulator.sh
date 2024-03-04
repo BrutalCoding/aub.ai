@@ -16,16 +16,16 @@ if [ ! -f "pubspec.yaml" ]; then
     exit 1
 fi
 
+# Run autoupdate_git_submodules.sh
+echo "[AUB.AI] Running autoupdate_git_submodules.sh..."
+chmod +x brutalcoding_scripts/autoupdate_git_submodules.sh
+./brutalcoding_scripts/autoupdate_git_submodules.sh || exit
+
 # Detect if OS is macOS, if not, exit the script.
 if [ "$(uname)" != "Darwin" ]; then
     echo "[AUB.AI] Sorry, this script only works on macOS. Exiting..."
     exit 1
 fi
-
-# Run git submodule update to get the latest version of llama.cpp
-echo "[AUB.AI] Updating git submodules..."
-git submodule init
-git submodule update
 
 # Flutter related
 flutter clean
