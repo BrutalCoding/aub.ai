@@ -3352,6 +3352,7 @@ abstract class llama_rope_scaling_type {
 }
 
 abstract class llama_pooling_type {
+  static const int LLAMA_POOLING_TYPE_UNSPECIFIED = -1;
   static const int LLAMA_POOLING_TYPE_NONE = 0;
   static const int LLAMA_POOLING_TYPE_MEAN = 1;
   static const int LLAMA_POOLING_TYPE_CLS = 2;
@@ -3540,6 +3541,11 @@ final class llama_context_params extends ffi.Struct {
   @ffi.Int32()
   external int rope_scaling_type;
 
+  /// whether to pool (sum) embedding results by sequence id
+  /// (ignored if no pooling layer)
+  @ffi.Int32()
+  external int pooling_type;
+
   /// RoPE base frequency, 0 = from model
   @ffi.Float()
   external double rope_freq_base;
@@ -3595,10 +3601,6 @@ final class llama_context_params extends ffi.Struct {
   /// whether to offload the KQV ops (including the KV cache) to GPU
   @ffi.Bool()
   external bool offload_kqv;
-
-  /// whether to pool (sum) embedding results by sequence id (ignored if no pooling layer)
-  @ffi.Bool()
-  external bool do_pooling;
 
   /// Abort callback
   /// if it returns true, execution of llama_decode() will be aborted

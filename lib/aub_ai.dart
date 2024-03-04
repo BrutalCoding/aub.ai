@@ -1,11 +1,11 @@
 import 'dart:async';
-import 'dart:convert' show utf8;
+import 'dart:convert';
+import 'dart:developer';
 import 'dart:ffi' as ffi;
 import 'dart:ffi';
 import 'dart:io';
 import 'dart:isolate';
-import 'dart:math';
-import 'dart:typed_data';
+import 'dart:math' hide log;
 
 import 'package:aub_ai/data/prompt_template.dart';
 import 'package:ffi/ffi.dart';
@@ -22,15 +22,11 @@ const String _eosBrutalCodingHasSpoken = 'BRUTALCODING_HAS_SPOKEN';
 /// generating the response (e.g. typing in real-time).
 typedef OnTokenGeneratedCallback = void Function(String token);
 
-ffi.Pointer<ffi.Int8> allocateCharArray(int length) {
-  return calloc<ffi.Int8>(length);
-}
-
-ffi.Pointer<llama_token> allocateCIntList(int length) {
+ffi.Pointer<llama_token> _allocateCIntList(int length) {
   return calloc<llama_token>(length);
 }
 
-int getStringLength(Pointer<Char> buffer) {
+int _getStringLength(Pointer<Char> buffer) {
   int length = 0;
   while (buffer.elementAt(length).value != 0) {
     length++;
@@ -38,7 +34,19 @@ int getStringLength(Pointer<Char> buffer) {
   return length;
 }
 
-ffi.Pointer<ffi.Int32> truncateMemory(
+void _batchAdd(
+    llama_batch batch, int id, int pos, List<int> seqIds, bool logits) {
+  batch.token[batch.n_tokens] = id;
+  batch.pos[batch.n_tokens] = pos;
+  batch.n_seq_id[batch.n_tokens] = seqIds.length;
+  for (int i = 0; i < seqIds.length; i++) {
+    batch.seq_id[batch.n_tokens][i] = seqIds[i];
+  }
+  batch.logits[batch.n_tokens] = logits ? 1 : 0;
+  batch.n_tokens += 1;
+}
+
+ffi.Pointer<ffi.Int32> _truncateMemory(
   ffi.Pointer<ffi.Int32> original,
   int originalLength,
   int nOfTok,
@@ -56,7 +64,7 @@ ffi.Pointer<ffi.Int32> truncateMemory(
   return truncated;
 }
 
-ffi.Pointer<ffi.Int32> allocateIntArray(List<int> list) {
+ffi.Pointer<ffi.Int32> _allocateIntArray(List<int> list) {
   final pointer = calloc<ffi.Int32>(list.length);
 
   for (int i = 0; i < list.length; i++) {
@@ -64,8 +72,6 @@ ffi.Pointer<ffi.Int32> allocateIntArray(List<int> list) {
   }
   return pointer;
 }
-
-Pointer<llama_context>? llamaCtxPtr;
 
 /// Invoke the AI model to generate a response from given [instruction].
 /// Returns the response as a [String].
@@ -93,254 +99,200 @@ Stream<String> _generateResponse({
     throw Exception('File does not exist: $filePathToModel');
   }
 
-  final Pointer<Char> modelPath = filePathToModel.toNativeUtf8().cast<Char>();
+  llamaCpp.llama_backend_init();
+
+  // TODO: Figure out what numa strategy number to use, see common.h from llama.cpp repo.
+  // I don't know what it does, except for the fact that it's related to
+  // memory allocation and improves performance.
+  const int numa =
+      0; // GGML_NUMA_STRATEGY_DISABLED (0), see common.h as previously mentioned.
+  llamaCpp.llama_numa_init(numa);
+
   final llama_model_params llamaModelParams =
       llamaCpp.llama_model_default_params();
+
+  final Pointer<Char> modelPath = filePathToModel.toNativeUtf8().cast<Char>();
+
   final Pointer<llama_model> llamaModel = llamaCpp.llama_load_model_from_file(
     modelPath,
     llamaModelParams,
   );
+  log('[AUB.AI] Model loaded from file: $filePathToModel');
 
-  final String promptTemplateToProcess = promptTemplate.template;
-  debugPrint("[AUB.AI] promptTemplateToProcess: $promptTemplateToProcess");
-
-  // LLaMa context parameters. These are configurable parameters that can be
-  // used to control the behaviour of the AI model.
   final llama_context_params llamaCtxDefaultParams =
       llamaCpp.llama_context_default_params();
+
   final Pointer<llama_context_params> llamaCtxParamsPtr =
       calloc<llama_context_params>();
+
   llamaCtxParamsPtr.ref = llamaCtxDefaultParams;
 
-  // Override the default parameters with the parameters from the prompt template.
-  llamaCtxParamsPtr.ref.n_ctx =
-      promptTemplate.contextSize ?? llamaCtxDefaultParams.n_ctx;
-  llamaCtxParamsPtr.ref.seed =
-      promptTemplate.randomSeedNumber ?? llamaCtxDefaultParams.seed;
-  llamaCtxParamsPtr.ref.n_threads_batch =
-      promptTemplate.cpuThreadsToUse ?? Platform.numberOfProcessors;
-
-  // Dart gives us the number of total threads which is what we want.
-  // For example, on a Apple MBP with M1 Pro, this will return 10 cores that
-  // will be utilized by llama.cpp. At the time of writing, the default value
-  // of n_threads that llama.cpp defaults to is 4.
-  llamaCtxParamsPtr.ref.n_threads =
-      promptTemplate.cpuThreadsToUse ?? Platform.numberOfProcessors;
-
-  debugPrint(
-      "[AUB.AI] Updated n_ctx from: ${llamaCtxDefaultParams.n_ctx} (default) -> ${llamaCtxParamsPtr.ref.n_ctx} (new)");
-  debugPrint(
-      "[AUB.AI] Updated seed from: ${llamaCtxDefaultParams.seed} (default) -> ${llamaCtxParamsPtr.ref.seed} (new)");
-  debugPrint(
-      "[AUB.AI] Updated n_threads from: ${llamaCtxDefaultParams.n_threads} (default) -> ${llamaCtxParamsPtr.ref.n_threads} (new)");
-
-  llamaCtxPtr ??=
-      llamaCpp.llama_new_context_with_model(llamaModel, llamaCtxParamsPtr.ref);
-  debugPrint('[AUB.AI] llama_new_context_with_model(...)');
-
-  // Here we're creating a list of length 4 and putting the items of tmp in it.
-  final List<int> tmp = [0, 1, 2, 3];
-  final Pointer<Int32> tmpPointer = allocateIntArray(tmp); //correct
-
-  llamaCpp.llama_eval(llamaCtxPtr!, tmpPointer, tmp.length, 0);
-  llamaCpp.llama_add_eos_token(llamaModel);
-
-  int nPast = 0;
-
-  Pointer<Int32> tokens =
-      calloc<llama_token>(promptTemplateToProcess.length + 1);
-
-  final int nMaxTokens = promptTemplateToProcess.length + 1;
-  final Pointer<Char> prompt =
-      promptTemplateToProcess.toNativeUtf8() as Pointer<Char>;
-
-  debugPrint('[AUB.AI] llama_tokenize');
-  final int nOfTok = llamaCpp.llama_tokenize(
+  // Tokenize the prompt
+  Pointer<Int32> tokens = _allocateCIntList(promptTemplate.template.length + 1);
+  final Pointer<Char> text =
+      promptTemplate.template.toNativeUtf8().cast<Char>();
+  llamaCpp.llama_tokenize(
     llamaModel,
-    prompt,
-    promptTemplateToProcess.length,
+    text,
+    promptTemplate.template.length,
     tokens,
-    nMaxTokens,
-    true,
-    true,
+    promptTemplate.template.length + 1,
+    false,
+    false,
   );
 
-  tokens = truncateMemory(tokens, nOfTok, nOfTok);
-  final nCtx = llamaCpp.llama_n_ctx(llamaCtxPtr!);
+  final Pointer<llama_context> llamaCtxPtr =
+      llamaCpp.llama_new_context_with_model(
+    llamaModel,
+    llamaCtxParamsPtr.ref,
+  );
+  final int nCtx = llamaCpp.llama_n_ctx(llamaCtxPtr);
 
-  int nPredict = llamaCtxParamsPtr.ref.n_ctx;
-  nPredict = min(nPredict, nCtx - nOfTok);
+  // In C++: const int n_kv_req = tokens_list.size() + (n_len - tokens_list.size());
+  // In Dart: final int nKvReq = tokens.length + (nCtx - tokens.length);
+  final int tokensLength = promptTemplate.template.length + 1;
+  final int nKvReq = tokensLength + (nCtx - tokensLength);
 
-  int inputConsumed = 0;
-  bool inputNoecho = false;
-  int remainingTokens = nPredict;
-
-  // The list of tokens to be fed to the model
-  final embd = <int>[];
-  const lastNSize = 64;
-  List<int> lastNTokensData = List.generate(lastNSize, (index) => 0);
-
-  // The batch size, i.e. the number of tokens to be fed to the model at once
-  const nBatch = 32;
-  const lastNRepeat = 64;
-  const repeatPenalty = 1.0;
-  const frequencyPenalty = 0.0;
-  const presencePenalty = 0.0;
-
-  // This is used to end the conversation when a new end of string token is
-  // generated by the AI model.
-  final String? eosToken = promptTemplate.eosToken;
-
-  // Count the amount of end of string tokens in the prompt.
-  int eosCount = 0;
-  if (eosToken != null) {
-    eosCount = promptTemplateToProcess.split(eosToken).length - 1;
-    debugPrint(
-      '[AUB.AI] Amount of EOS tokens in prompt: $eosCount. EOS token: $eosToken.',
+  // If nKvReq is greater than nCtx, then we throw this error:
+  // error: n_kv_req > n_ctx, the required KV cache size is not big enough either reduce n_len or increase n_ctx
+  if (nKvReq > nCtx) {
+    throw Exception(
+      'n_kv_req > n_ctx, the required KV cache size is not big enough either reduce n_len or increase n_ctx',
     );
   }
 
-  // The conversation that is generated by the AI model.
-  // This is the existing prompt (conversation) + the response generated by the AI model.
-  String conversation = '';
+  // Create a llama_batch with size 512
+  // We use this object to submit token data for decoding
+  llama_batch batch = llamaCpp.llama_batch_init(512, 0, 1);
 
-  // This is used to end the conversation when a new end of string token is
-  // generated by the AI model.
-  bool isConversationEnded = false;
+  // Add tokens to the batch
+  final List<int> tokenList = _tokenize(
+    promptTemplate.template,
+    false,
+    llamaModel,
+    llamaCpp,
+  );
 
-  while (remainingTokens > 0 && !isConversationEnded) {
-    // Check if the AI model has generated a new end of string token.
-    // If so, we end the conversation.
-    if (eosToken != null) {
-      final int amountOfEosTokensInConversation =
-          conversation.split(eosToken).length - 1;
-      if (amountOfEosTokensInConversation > eosCount) {
-        // The AI model has generated a new end of string token, so we
-        // end the conversation.
-        isConversationEnded = true;
-        debugPrint(
-          '[AUB.AI] AI model has generated a new end of string token, so we end the conversation.',
-        );
-      }
-    }
+  batch.n_tokens = 0;
 
-    if (embd.isNotEmpty) {
-      final Pointer<Int32> embdPointer = allocateIntArray(embd);
-      llamaCpp.llama_eval(llamaCtxPtr!, embdPointer, embd.length, nPast);
-      calloc.free(embdPointer); // Freeing the pointer after using it
-    }
-
-    nPast += embd.length;
-    embd.clear();
-
-    if (nOfTok <= inputConsumed) {
-      final Pointer<Float> logits = llamaCpp.llama_get_logits(llamaCtxPtr!);
-      final int nVocab = llamaCpp.llama_n_vocab(llamaModel);
-      final Pointer<llama_token_data> arr = calloc<llama_token_data>(nVocab);
-
-      for (int tokenId = 0; tokenId < nVocab; tokenId++) {
-        arr[tokenId].id = tokenId;
-        arr[tokenId].logit = logits[tokenId];
-        arr[tokenId].p = 0.0;
-      }
-
-      final candidatesP = calloc<llama_token_data_array>();
-      candidatesP.ref.data = arr;
-      candidatesP.ref.size = nVocab;
-      candidatesP.ref.sorted = false;
-
-      final allocatedArray = allocateIntArray(lastNTokensData);
-      llamaCpp.llama_sample_repetition_penalties(
-        llamaCtxPtr!,
-        candidatesP,
-        allocatedArray,
-        lastNRepeat,
-        repeatPenalty,
-        frequencyPenalty,
-        presencePenalty,
-      );
-
-      llamaCpp.llama_sample_top_k(llamaCtxPtr!, candidatesP, 40, 1);
-      llamaCpp.llama_sample_top_p(llamaCtxPtr!, candidatesP, 0.8, 1);
-      llamaCpp.llama_sample_temperature(
-        llamaCtxPtr!,
-        candidatesP,
-        promptTemplate.temperature ?? 0.4,
-      );
-      final int id = llamaCpp.llama_sample_token(llamaCtxPtr!, candidatesP);
-
-      lastNTokensData = [...lastNTokensData.sublist(1), id];
-
-      embd.add(id);
-      inputNoecho = false;
-      remainingTokens -= 1;
-    } else {
-      while (nOfTok > inputConsumed) {
-        embd.add(tokens[inputConsumed]);
-
-        lastNTokensData.removeAt(0);
-        lastNTokensData.add(tokens[inputConsumed]);
-        inputConsumed++;
-        if (embd.length >= nBatch) {
-          break;
-        }
-      }
-    }
-
-    if (!inputNoecho) {
-      for (final id in embd) {
-        const int size = 32;
-        final Pointer<Char> buffer = calloc<Char>(size);
-
-        final int n = llamaCpp.llama_token_to_piece(
-          llamaModel,
-          id,
-          buffer,
-          size,
-        );
-
-        final ByteBuffer byteBuffer =
-            buffer.cast<Uint8>().asTypedList(n).buffer;
-        final Uint8List list = byteBuffer.asUint8List();
-
-        try {
-          final String decodedToken = utf8.decode(
-            list,
-            allowMalformed: false,
-          );
-
-          // Keep track of the conversation that is generated by the AI model.
-          conversation += decodedToken;
-
-          // Send the last token of the response back to the main isolate.
-          yield decodedToken;
-        } catch (_) {
-          debugPrint("[AUB.AI]: Error decoding token: $id");
-        }
-
-        if (n <= size) {
-          final truncated = calloc<ffi.Char>(n);
-          final length = getStringLength(buffer);
-          for (int i = 0; i < n && i < length + 1; i++) {
-            truncated[i] = buffer[i];
-          }
-          calloc.free(buffer);
-        }
-      }
-    }
-
-    // Conditions to break out of the loop and end the conversation.
-    if (embd.isNotEmpty && embd.last == llamaCpp.llama_token_eos(llamaModel)) {
-      break;
-    }
+  for (int i = 0; i < tokenList.length; i++) {
+    log('[AUB.AI] Adding token to batch: ${tokenList[i]}');
+    _batchAdd(batch, tokenList[i], i, [0], false);
   }
 
-  // Freeing the pointers after using them
-  // llamaCpp.llama_free(llamaCtxPtr);
+  log('[AUB.AI] Doing something with batch.logits...');
+  batch.logits[batch.n_tokens - 1] = 1;
 
-  // AI has finished generating the response, so we return this
-  // special string to indicate that to the completer.
+  // Decode the tokens
+  log('[AUB.AI] Decoding tokens...');
+  final decodedTokens = llamaCpp.llama_decode(llamaCtxPtr, batch);
+  if (decodedTokens != 0) {
+    log('[AUB.AI] Error during llama_decode(...).');
+    throw Exception(
+      "Unable to decode token batch, error during llama_decode(...).",
+    );
+  }
+
+  // Convert token to string
+  // final decodedTokensIntoString = llamaCpp.llama_token_to_piece(model, token, buf, length)
+  final int decodedTokensIntoString = llamaCpp.llama_token_to_piece(
+    llamaModel,
+    batch.token[0],
+    calloc<ffi.Char>(512),
+    512,
+  );
+
+  log('[AUB.AI] Decoded tokens into string: $decodedTokensIntoString');
+
+  // Use _tokenToPiece to convert the token to a string
+  for (int i = 0; i < batch.n_tokens; i++) {
+    final int token = batch.token[i];
+    final String tokenPiece = _tokenToPiece(
+      token,
+      llamaCpp,
+      llamaModel,
+    );
+
+    log('[AUB.AI] Token piece: $tokenPiece');
+    yield tokenPiece;
+  }
+
+  // Return the n_tokens which indicates the number of tokens in the batch
+  final int nTokens = batch.n_tokens;
+  log('[AUB.AI] Number of tokens in batch: $nTokens');
+
   yield _eosBrutalCodingHasSpoken;
+
+  // We yield back the tokens one by one, after
+  // for (int i = 0; i < nTokens; i++) {
+  //   final int token = batch.token[i];
+  //   log('[AUB.AI] Yielding token: $token');
+  //   yield token.toString();
+  // }
+}
+
+/// Converts a text string to a list of token IDs.
+///
+/// This function tokenizes the given string into a sequence of integers representing tokens.
+/// An optional flag 'addBos' indicates whether to prepend a beginning-of-sentence token.
+/// The function handles memory allocation and conversion between Dart strings and native character arrays.
+List<int> _tokenize(
+  String text,
+  bool addBos,
+  Pointer<llama_model> model,
+  AubAiBindings llamaCpp,
+) {
+  Pointer<Char> cchar = text.toNativeUtf8().cast<Char>();
+
+  int nUtf8CodeUnits = utf8.encode(text).length;
+  int nTokens = nUtf8CodeUnits + (addBos ? 1 : 0) + 1;
+
+  Pointer<llama_token> tokens =
+      malloc.allocate<llama_token>(nTokens * sizeOf<llama_token>());
+
+  try {
+    int tokenCount = llamaCpp.llama_tokenize(
+        model, cchar, nUtf8CodeUnits, tokens, nTokens, addBos, false);
+
+    List<int> tokensList = [];
+    for (int i = 0; i < tokenCount; i++) {
+      tokensList.add(tokens[i]);
+    }
+
+    return tokensList;
+  } finally {
+    malloc.free(tokens);
+    malloc.free(cchar);
+  }
+}
+
+/// Converts a token ID to its corresponding string representation.
+///
+/// This utility function takes a token ID and returns the associated text piece.
+/// It handles the conversion and memory management involved in this process.
+/// This is typically used in decoding the output of the model.
+///
+/// Note of BrutalCoding:
+///   Credits to https://github.com/netdur/llama_cpp_dart (and obviously llama.cpp's examples)
+///   for getting me on track with this function.
+///   While I try to write my own code, or at least understand it,
+///   I had to use the code from this repository to save time and solve a problem.
+String _tokenToPiece(
+    int token, AubAiBindings llamaCpp, Pointer<llama_model> model) {
+  int bufferSize = 64;
+  Pointer<Char> result = malloc.allocate<Char>(bufferSize);
+  try {
+    int bytesWritten =
+        llamaCpp.llama_token_to_piece(model, token, result, bufferSize);
+
+    bytesWritten = min(bytesWritten, bufferSize - 1);
+
+    final byteBuffer = result.cast<Uint8>().asTypedList(bytesWritten);
+
+    return utf8.decode(byteBuffer, allowMalformed: true);
+  } finally {
+    malloc.free(result);
+  }
 }
 
 OnTokenGeneratedCallback? _onTokenGenerated;
